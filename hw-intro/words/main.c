@@ -99,7 +99,10 @@ int count_words(WordCount **wclist, FILE *infile) {
     next_char = tolower(next_char);
     if (feof(infile)) {
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
-        add_word(wclist, curr_word);
+        int err_code = add_word(wclist, curr_word);
+        if (err_code == 1) {
+          return 1;
+        }
       }
       break;
     }
@@ -112,7 +115,10 @@ int count_words(WordCount **wclist, FILE *infile) {
     } else {
       // not an alphabet => can't be part of word or end of a word => add to wclist
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
-        add_word(wclist, curr_word);
+        int err_code = add_word(wclist, curr_word);
+        if (err_code == 1) {
+          return 1;
+        }
       }
       memset(curr_word, '\0', sizeof(curr_word));
     }
@@ -206,7 +212,7 @@ int main (int argc, char *argv[]) {
       infile = fopen(file_name, "r");
       if (infile == NULL) {
         perror("Error in opening file");
-        return -1;
+        return 1;
       }
 
       int words_len = num_words(infile);
@@ -221,7 +227,7 @@ int main (int argc, char *argv[]) {
       // printf("hello world after count_words\n");
       if (code == 1) {
         perror("Error while counting words in count_words");
-        return -1;
+        return 1;
       }
       fclose(infile);
     }
