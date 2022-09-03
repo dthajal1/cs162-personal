@@ -224,6 +224,7 @@ int main (int argc, char *argv[]) {
     if (infile) { // stdin
       int words_len = num_words(infile);
       total_words += words_len;
+      
 
     } else {
       for (int i = optind; i < argc; i++) {
