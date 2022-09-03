@@ -65,7 +65,7 @@ int num_words(FILE* infile) {
       }
     } else {
       // not an alphabet => can't be part of word or end of a word
-      if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
         num_words += 1;
       }
       memset(curr_word, '\0', sizeof(curr_word));
