@@ -92,6 +92,9 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
+  if (infile == NULL) {
+    return 1;
+  }
   char curr_word[MAX_WORD_LEN + 1];
   curr_word[0] = '\0';
   int i = 0;
