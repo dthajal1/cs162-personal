@@ -66,6 +66,7 @@ int num_words(FILE* infile) {
       if (strlen(curr_word) <= MAX_WORD_LEN) {
         curr_word[i] = next_char;
         i++;
+        curr_word[i] = '\0';
       }
     } else {
       // not an alphabet => can't be part of word or end of a word
@@ -96,7 +97,7 @@ int count_words(WordCount **wclist, FILE *infile) {
     return 1;
   }
 
-  char curr_word[64];
+  char curr_word[MAX_WORD_LEN + 1];
   curr_word[0] = '\0';
   int i = 0;
 
@@ -105,6 +106,7 @@ int count_words(WordCount **wclist, FILE *infile) {
     if (feof(infile)) {
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
         printf("adding word at the end: %s\n", curr_word);
+        // curr_word[i] = '\0';
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -213,6 +215,15 @@ int main (int argc, char *argv[]) {
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
+    
+    int words_len = num_words(infile);
+    total_words += words_len;
+
+    int code = count_words(&word_counts, infile);
+    if (code == 1) {
+      perror("Error while counting words in count_words");
+      return 1;
+    }
   } else {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
