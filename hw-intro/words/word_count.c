@@ -37,6 +37,7 @@ int init_words(WordCount **wclist) {
      Returns 0 if no errors are encountered
      in the body of this function; 1 otherwise.
   */
+   *wclist = NULL;
   return 0;
 }
 
@@ -60,20 +61,16 @@ ssize_t len_words(WordCount *wchead) {
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
-  WordCount *wc = NULL;
-
-  if (wchead == NULL) {
-    return wc;
-  }
 
   WordCount *temp_pointer = wchead;
-  while (temp_pointer != NULL && temp_pointer->word != NULL && strcmp(temp_pointer->word, word) != 0) {
+  while (temp_pointer != NULL && temp_pointer->word != NULL) {
+    if (strcmp(temp_pointer->word, word) == 0) {
+      return temp_pointer;
+    }
     temp_pointer = temp_pointer->next;
   }
-  if (temp_pointer != NULL && temp_pointer != wchead && temp_pointer->word != NULL && strcmp(temp_pointer->word, word) == 0) { 
-    wc = temp_pointer;
-  }
-  return wc;
+  
+  return NULL;
 }
 
 int add_word(WordCount **wclist, char *word) {

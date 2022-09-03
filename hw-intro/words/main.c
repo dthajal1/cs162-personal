@@ -211,7 +211,7 @@ int main (int argc, char *argv[]) {
 
       int words_len = num_words(infile);
       fclose(infile);
-      printf("The file with filename %s has %d total number of words\n", file_name, words_len);
+      // printf("The file with filename %s has %d total number of words\n", file_name, words_len);
 
       total_words += words_len;
 
