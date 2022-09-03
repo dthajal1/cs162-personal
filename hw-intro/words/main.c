@@ -52,7 +52,7 @@ int num_words(FILE* infile) {
   while (1) {
     char next_char = fgetc(infile);
     if (feof(infile)) {
-      if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
         num_words += 1;
       }
       break;
