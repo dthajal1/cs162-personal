@@ -37,13 +37,6 @@ int init_words(WordCount **wclist) {
      Returns 0 if no errors are encountered
      in the body of this function; 1 otherwise.
   */
-  *wclist = malloc(sizeof(WordCount));
-  if (*wclist == NULL) {
-    return 1;
-  }
-  (*wclist)->word = NULL;
-  (*wclist)->count = 0;
-  (*wclist)->next = NULL;
   return 0;
 }
 
@@ -74,11 +67,12 @@ WordCount *find_word(WordCount *wchead, char *word) {
   }
 
   WordCount *temp_pointer = wchead;
-  while (temp_pointer->word != NULL && temp_pointer->word != word) {
+  while (temp_pointer != NULL && temp_pointer->word != NULL && strcmp(temp_pointer->word, word) != 0) {
     temp_pointer = temp_pointer->next;
   }
-  wc = temp_pointer;
-
+  if (temp_pointer != NULL && temp_pointer != wchead && temp_pointer->word != NULL && strcmp(temp_pointer->word, word) == 0) { 
+    wc = temp_pointer;
+  }
   return wc;
 }
 
@@ -88,13 +82,19 @@ int add_word(WordCount **wclist, char *word) {
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
 
+  // printf("adding %s to list\n", word);
   WordCount *existing_word_count = find_word(*wclist, word);
   if (existing_word_count != NULL) {
+    // printf("existing word exists!!!!!!!!!!!!!!!!!\n");
     existing_word_count->count += 1;
   } else {
+    // printf("NOT EXISTS\n");
     // create a new word_count node with count set to 1
-    WordCount *new_wc = NULL;
-    init_words(&new_wc);
+    WordCount *new_wc = malloc(sizeof(WordCount));
+    if (new_wc == NULL) {
+      return 1;
+    } 
+    // init_words(&new_wc);
     char *malloced_string = new_string(word);
     if (malloced_string == NULL) {
       return 1;
@@ -102,19 +102,16 @@ int add_word(WordCount **wclist, char *word) {
     new_wc->word = malloced_string;
     new_wc->count = 1;
 
-    WordCount *temp_pointer = *wclist;
-    while (temp_pointer != NULL) {
-      temp_pointer = temp_pointer->next;
-    }
-
-    temp_pointer = new_wc;
+    // append it to front of linked list
+    WordCount *temp = *wclist;
+    *wclist = new_wc;
+    new_wc->next = temp;
   }
   return 0;
 }
 
 void fprint_words(WordCount *wchead, FILE *ofile) {
   /* print word counts to a file */
-  printf("hell oworl d'\n");
   WordCount *wc;
   for (wc = wchead; wc; wc = wc->next) {
     fprintf(ofile, "%i\t%s\n", wc->count, wc->word);
