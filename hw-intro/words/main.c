@@ -103,7 +103,6 @@ int count_words(WordCount **wclist, FILE *infile) {
     char next_char = fgetc(infile);
     if (feof(infile)) {
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
-        // printf("adding word at the end: %s\n", curr_word);
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -114,7 +113,6 @@ int count_words(WordCount **wclist, FILE *infile) {
     int is_alpha = isalpha(next_char);
     if (is_alpha != 0) {
       // is an alphabet => has to be part of the word
-      // printf("%c\n", next_char);
       if (strlen(curr_word) <= MAX_WORD_LEN) {
         curr_word[i] = tolower(next_char);
         i++;
@@ -123,7 +121,6 @@ int count_words(WordCount **wclist, FILE *infile) {
     } else {
       // not an alphabet => can't be part of word or end of a word => add to wclist
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
-        // printf("adding word: %s\n", curr_word);
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -233,7 +230,6 @@ int main (int argc, char *argv[]) {
 
         int words_len = num_words(infile);
         fclose(infile);
-        // printf("The file with filename %s has %d total number of words\n", file_name, words_len);
 
         total_words += words_len;
       }
