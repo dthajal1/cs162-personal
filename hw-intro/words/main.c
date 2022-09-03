@@ -87,21 +87,22 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
-  if (*wclist == NULL || infile == NULL) {
+  if (infile == NULL) {
     return 1;
   }
 
   char curr_word[64];
+  memset(curr_word, '\0', sizeof(curr_word));
 
   while (1) {
     char next_char = fgetc(infile);
+    next_char = tolower(next_char);
     if (feof(infile)) {
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
         add_word(wclist, curr_word);
       }
       break;
     }
-    next_char = tolower(next_char);
     int is_alpha = isalpha(next_char);
     if (is_alpha != 0) {
       // is an alphabet => has to be part of the word
@@ -125,12 +126,13 @@ int count_words(WordCount **wclist, FILE *infile) {
  * Useful function: strcmp().
  */
 static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
+  // return non-zero if wc1 less than wc2
   if (wc1->count < wc2->count) {
-    return -1;
-  } else if (wc1->count > wc2->count) {
     return 1;
+  } else if (wc1->count > wc2->count) {
+    return 0;
   } else {
-    return strcmp(wc1->word, wc2->word);
+    return strcmp(wc1->word, wc2->word) < 0 ;
   }
 }
 
@@ -208,18 +210,19 @@ int main (int argc, char *argv[]) {
       }
 
       int words_len = num_words(infile);
+      fclose(infile);
       printf("The file with filename %s has %d total number of words\n", file_name, words_len);
 
       total_words += words_len;
 
-      printf("hello world\n");
+      infile = fopen(file_name, "r");
+      // printf("hello world before count_words\n");
       int code = count_words(&word_counts, infile);
-      printf("hello world\n");
+      // printf("hello world after count_words\n");
       if (code == 1) {
         perror("Error while counting words in count_words");
         return -1;
       }
-
       fclose(infile);
     }
   }
