@@ -54,7 +54,6 @@ int num_words(FILE* infile) {
   while (1) {
     char next_char = fgetc(infile);
     if (feof(infile)) {
-      
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
         num_words += 1;
       }
@@ -106,7 +105,6 @@ int count_words(WordCount **wclist, FILE *infile) {
     if (feof(infile)) {
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
         printf("adding word at the end: %s\n", curr_word);
-        // curr_word[i] = '\0';
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -215,49 +213,56 @@ int main (int argc, char *argv[]) {
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
-    
-    int words_len = num_words(infile);
-    total_words += words_len;
-
-    int code = count_words(&word_counts, infile);
-    if (code == 1) {
-      perror("Error while counting words in count_words");
-      return 1;
-    }
   } else {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
 
-    for (int i = optind; i < argc; i++) {
-      char *file_name = argv[i];
-      infile = fopen(file_name, "r");
-      if (infile == NULL) {
-        perror("Error in opening file");
-        return 1;
-      }
+  }
 
+  if (count_mode) {
+    if (infile) { // stdin
       int words_len = num_words(infile);
-      fclose(infile);
-      // printf("The file with filename %s has %d total number of words\n", file_name, words_len);
-
       total_words += words_len;
 
-      infile = fopen(file_name, "r");
-      // printf("hello world before count_words\n");
+    } else {
+      for (int i = optind; i < argc; i++) {
+        char *file_name = argv[i];
+        infile = fopen(file_name, "r");
+        if (infile == NULL) {
+          perror("Error in opening file");
+          return 1;
+        }
+
+        int words_len = num_words(infile);
+        fclose(infile);
+        // printf("The file with filename %s has %d total number of words\n", file_name, words_len);
+
+        total_words += words_len;
+      }
+    }
+
+    printf("The total number of words is: %i\n", total_words);
+  } else {
+    if (infile) { // stdin
       int code = count_words(&word_counts, infile);
-      // printf("hello world after count_words\n");
       if (code == 1) {
         perror("Error while counting words in count_words");
         return 1;
       }
-      fclose(infile);
+    } else {
+        for (int i = optind; i < argc; i++) {
+          char *file_name = argv[i];
+          infile = fopen(file_name, "r");
+          int code = count_words(&word_counts, infile);
+          if (code == 1) {
+            perror("Error while counting words in count_words");
+            return 1;
+          }
+          fclose(infile);
+        }
     }
-  }
-
-  if (count_mode) {
-    printf("The total number of words is: %i\n", total_words);
-  } else {
+    
     wordcount_sort(&word_counts, wordcount_less);
 
     printf("The frequencies of each word are: \n");
