@@ -92,10 +92,6 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
-  if (infile == NULL) {
-    return 1;
-  }
-
   char curr_word[MAX_WORD_LEN + 1];
   curr_word[0] = '\0';
   int i = 0;
@@ -104,7 +100,7 @@ int count_words(WordCount **wclist, FILE *infile) {
     char next_char = fgetc(infile);
     if (feof(infile)) {
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
-        printf("adding word at the end: %s\n", curr_word);
+        // printf("adding word at the end: %s\n", curr_word);
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -115,7 +111,7 @@ int count_words(WordCount **wclist, FILE *infile) {
     int is_alpha = isalpha(next_char);
     if (is_alpha != 0) {
       // is an alphabet => has to be part of the word
-      printf("%c\n", next_char);
+      // printf("%c\n", next_char);
       if (strlen(curr_word) <= MAX_WORD_LEN) {
         curr_word[i] = tolower(next_char);
         i++;
@@ -124,7 +120,7 @@ int count_words(WordCount **wclist, FILE *infile) {
     } else {
       // not an alphabet => can't be part of word or end of a word => add to wclist
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
-        printf("adding word: %s\n", curr_word);
+        // printf("adding word: %s\n", curr_word);
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -217,15 +213,12 @@ int main (int argc, char *argv[]) {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
-
   }
 
   if (count_mode) {
     if (infile) { // stdin
       int words_len = num_words(infile);
       total_words += words_len;
-      
-
     } else {
       for (int i = optind; i < argc; i++) {
         char *file_name = argv[i];

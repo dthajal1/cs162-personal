@@ -80,6 +80,7 @@ int add_word(WordCount **wclist, char *word) {
   */
 
   // printf("adding %s to list\n", word);
+  // printf("adding %s to list\n", word);
   WordCount *existing_word_count = find_word(*wclist, word);
   if (existing_word_count != NULL) {
     // printf("existing word exists!!!!!!!!!!!!!!!!!\n");
