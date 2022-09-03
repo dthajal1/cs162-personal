@@ -97,13 +97,14 @@ int count_words(WordCount **wclist, FILE *infile) {
   }
 
   char curr_word[64];
-  memset(curr_word, '\0', sizeof(curr_word));
+  curr_word[0] = '\0';
+  int i = 0;
 
   while (1) {
     char next_char = fgetc(infile);
-    next_char = tolower(next_char);
     if (feof(infile)) {
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+        printf("adding word at the end: %s\n", curr_word);
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -114,18 +115,23 @@ int count_words(WordCount **wclist, FILE *infile) {
     int is_alpha = isalpha(next_char);
     if (is_alpha != 0) {
       // is an alphabet => has to be part of the word
+      printf("%c\n", next_char);
       if (strlen(curr_word) <= MAX_WORD_LEN) {
-        strcat(curr_word, &next_char);
+        curr_word[i] = tolower(next_char);
+        i++;
+        curr_word[i] = '\0';
       }
     } else {
       // not an alphabet => can't be part of word or end of a word => add to wclist
       if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+        printf("adding word: %s\n", curr_word);
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
         }
       }
       memset(curr_word, '\0', sizeof(curr_word));
+      i = 0;
     }
   }
   
