@@ -52,7 +52,7 @@ int num_words(FILE* infile) {
   while (1) {
     char next_char = fgetc(infile);
     if (feof(infile)) {
-      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) - 1 <= MAX_WORD_LEN) {
         num_words += 1;
       }
       break;
@@ -65,7 +65,7 @@ int num_words(FILE* infile) {
       }
     } else {
       // not an alphabet => can't be part of word or end of a word
-      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) - 1 <= MAX_WORD_LEN) {
         num_words += 1;
       }
       memset(curr_word, '\0', sizeof(curr_word));
@@ -98,7 +98,7 @@ int count_words(WordCount **wclist, FILE *infile) {
     char next_char = fgetc(infile);
     next_char = tolower(next_char);
     if (feof(infile)) {
-      if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) - 1 <= MAX_WORD_LEN) {
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
@@ -109,12 +109,12 @@ int count_words(WordCount **wclist, FILE *infile) {
     int is_alpha = isalpha(next_char);
     if (is_alpha != 0) {
       // is an alphabet => has to be part of the word
-      if (strlen(curr_word) <= MAX_WORD_LEN) {
+      if (strlen(curr_word) - 1 <= MAX_WORD_LEN) {
         strcat(curr_word, &next_char);
       }
     } else {
       // not an alphabet => can't be part of word or end of a word => add to wclist
-      if (strlen(curr_word) > 1 && strlen(curr_word) <= MAX_WORD_LEN) {
+      if (strlen(curr_word) - 1 > 1 && strlen(curr_word) - 1 <= MAX_WORD_LEN) {
         int err_code = add_word(wclist, curr_word);
         if (err_code == 1) {
           return 1;
