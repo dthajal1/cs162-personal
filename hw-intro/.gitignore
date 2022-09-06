@@ -2,3 +2,5 @@ limits
 map
 words/words
 !wc_sort.o
+map.S
+recurse.S
