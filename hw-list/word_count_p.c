@@ -78,11 +78,14 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
   }
 
   pthread_mutex_lock(&(wclist->lock));
+
   new_wc->count = 1;
   new_wc->word = word;
 
   list_push_back(&(wclist->lst), &(new_wc->elem));
+
   pthread_mutex_unlock(&(wclist->lock));
+  
   return new_wc;
 }
 

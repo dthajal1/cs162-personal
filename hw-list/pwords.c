@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
   wordcount_sort(&word_counts, less_count);
   fprint_words(&word_counts, stdout);
 
-  printf("the list size is %ld\n", len_words(&word_counts));
+  // printf("the list size is %ld\n", len_words(&word_counts));
 
   /* Last thing that main() should do */
   pthread_exit(NULL);
