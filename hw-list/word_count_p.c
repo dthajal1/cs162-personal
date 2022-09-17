@@ -68,7 +68,7 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
   if (existing_wc != NULL) {
     // pthread_mutex_lock(&(wclist->lock));
     existing_wc->count += 1;
-    // pthread_mutex_unlock(&(wclist->lock));
+    pthread_mutex_unlock(&(wclist->lock));
     return existing_wc;
   }
 
