@@ -32,6 +32,28 @@
 #include "word_count.h"
 #include "word_helpers.h"
 
+// #define NUM_THREADS 4
+
+typedef struct thread_arg {
+  char *file_name;
+  word_count_list_t *word_counts;
+} thread_arg;
+
+void *routine(void *arg) {
+  thread_arg *tha = (thread_arg *) arg;
+
+  FILE *infile = fopen(tha->file_name, "r");
+  if (infile == NULL) {
+    printf("Error in opening file\n");
+    exit(-1);
+  }
+
+  count_words(tha->word_counts, infile);
+  fclose(infile);
+
+  pthread_exit(NULL);
+}
+
 /*
  * main - handle command line, spawning one thread per file.
  */
@@ -40,15 +62,48 @@ int main(int argc, char* argv[]) {
   word_count_list_t word_counts;
   init_words(&word_counts);
 
+  int rc;
+  int i;
+  int nthreads = argc - 1; // arg[1] - first file
+  pthread_t threads[nthreads];
+
   if (argc <= 1) {
     /* Process stdin in a single thread. */
     count_words(&word_counts, stdin);
   } else {
-    /* TODO */
+    // Spawn threads
+    for (i = 0; i < nthreads; i++) {
+      // prepare args
+      thread_arg *tha = malloc(sizeof(struct thread_arg));
+      tha->file_name = argv[i + 1];
+      tha->word_counts = &word_counts;
+
+      rc = pthread_create(&threads[i], NULL, routine, tha);
+      if (rc) {
+        printf("ERROR; return code from pthread_create() is %d\n", rc);
+        exit(-1);
+      }
+    }
+
+    // wait for all spawned threads to finish
+    for (i = 0; i < nthreads; i++) {
+      rc = pthread_join(threads[i], NULL);
+      if (rc) {
+        printf("ERROR; return code from pthread_join() is %d\n", rc);
+        exit(-1);
+      }
+    }
+
   }
 
   /* Output final result of all threads' work. */
   wordcount_sort(&word_counts, less_count);
   fprint_words(&word_counts, stdout);
+
+  printf("the list size is %ld\n", len_words(&word_counts));
+
+  /* Last thing that main() should do */
+  pthread_exit(NULL);
+
   return 0;
 }
