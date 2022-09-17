@@ -62,12 +62,13 @@ word_count_t* find_word(word_count_list_t* wclist, char* word) {
 }
 
 word_count_t* add_word(word_count_list_t* wclist, char* word) {
+  pthread_mutex_lock(&(wclist->lock));
 
   word_count_t *existing_wc = find_word(wclist, word);
   if (existing_wc != NULL) {
-    pthread_mutex_lock(&(wclist->lock));
+    // pthread_mutex_lock(&(wclist->lock));
     existing_wc->count += 1;
-    pthread_mutex_unlock(&(wclist->lock));
+    // pthread_mutex_unlock(&(wclist->lock));
     return existing_wc;
   }
 
@@ -77,7 +78,7 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
     return NULL;
   }
 
-  pthread_mutex_lock(&(wclist->lock));
+  // pthread_mutex_lock(&(wclist->lock));
 
   new_wc->count = 1;
   new_wc->word = word;
