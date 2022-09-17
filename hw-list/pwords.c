@@ -75,6 +75,10 @@ int main(int argc, char* argv[]) {
     for (i = 0; i < nthreads; i++) {
       // prepare args
       thread_arg *tha = malloc(sizeof(struct thread_arg));
+      if (tha == NULL) {
+        printf("malloc failed when allocating thread_arg struct");
+        exit(-1);
+      }
       tha->file_name = argv[i + 1];
       tha->word_counts = &word_counts;
 
