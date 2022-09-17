@@ -43,13 +43,8 @@ size_t len_words(word_count_list_t* wclist) {
 
 word_count_t* find_word(word_count_list_t* wclist, char* word) {
   struct list_elem *e;
-  // printf("looking for %s \n", word);
   for (e = list_begin(wclist); e != list_end(wclist); e = list_next(e)) {
-    // struct word_count *wc = list_entry(e, struct word_count, elem);
     word_count_t *wc = list_entry(e, struct word_count, elem);
-    // printf("hello \n");
-    // printf("%s: \n", wc->word);
-    // printf("world \n");
     if (strcmp(wc->word, word) == 0) {
       return wc;
     }

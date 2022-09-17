@@ -32,8 +32,6 @@
 #include "word_count.h"
 #include "word_helpers.h"
 
-// #define NUM_THREADS 4
-
 typedef struct thread_arg {
   char *file_name;
   word_count_list_t *word_counts;
@@ -103,8 +101,6 @@ int main(int argc, char* argv[]) {
   /* Output final result of all threads' work. */
   wordcount_sort(&word_counts, less_count);
   fprint_words(&word_counts, stdout);
-
-  // printf("the list size is %ld\n", len_words(&word_counts));
 
   /* Last thing that main() should do */
   pthread_exit(NULL);

@@ -41,9 +41,7 @@ size_t len_words(word_count_list_t* wclist) {
 
   struct list_elem *e;
   for (e = list_begin(&(wclist->lst)); e != list_end(&(wclist->lst)); e = list_next(e)) {
-    // pthread_mutex_lock(&(wclist->lock));
     result += 1;
-    // pthread_mutex_unlock(&(wclist->lock));
   }
 
   return result;
@@ -66,9 +64,10 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
 
   word_count_t *existing_wc = find_word(wclist, word);
   if (existing_wc != NULL) {
-    // pthread_mutex_lock(&(wclist->lock));
     existing_wc->count += 1;
+
     pthread_mutex_unlock(&(wclist->lock));
+
     return existing_wc;
   }
 
@@ -77,8 +76,6 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
     perror("malloc failed when allocating word_count struct");
     return NULL;
   }
-
-  // pthread_mutex_lock(&(wclist->lock));
 
   new_wc->count = 1;
   new_wc->word = word;
