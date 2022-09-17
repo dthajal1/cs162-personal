@@ -41,9 +41,9 @@ size_t len_words(word_count_list_t* wclist) {
 
   struct list_elem *e;
   for (e = list_begin(&(wclist->lst)); e != list_end(&(wclist->lst)); e = list_next(e)) {
-    pthread_mutex_lock(&(wclist->lock));
+    // pthread_mutex_lock(&(wclist->lock));
     result += 1;
-    pthread_mutex_unlock(&(wclist->lock));
+    // pthread_mutex_unlock(&(wclist->lock));
   }
 
   return result;
@@ -85,7 +85,7 @@ word_count_t* add_word(word_count_list_t* wclist, char* word) {
   list_push_back(&(wclist->lst), &(new_wc->elem));
 
   pthread_mutex_unlock(&(wclist->lock));
-  
+
   return new_wc;
 }
 
