@@ -134,7 +134,34 @@ int main(unused int argc, unused char* argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
+
+      int status;
+      pid_t cpid = fork();
+      if (cpid > 0) {
+        // running in parent process: wait until child process completes
+              // and then continue listening for more commands
+        wait(&status);
+      } else if (cpid == 0) {
+        // runnning in child process: do the work here
+        char *path_to_new_program = tokens_get_token(tokens, 0);
+
+        size_t args_len = tokens_get_length(tokens);
+        char *new_args[args_len];
+        for (unsigned int i = 0; i < args_len; i++) {
+          new_args[i] = tokens_get_token(tokens, i);
+        }
+        new_args[args_len] = NULL;
+
+        execv(path_to_new_program, new_args);
+
+        /* execv doesn’t return when it works. So, if we got here, it failed! */
+        perror("execv failed");
+        exit(-1);
+      } else {
+        // foking failed
+        perror("Fork failed");
+      }
     }
 
     if (shell_is_interactive)
