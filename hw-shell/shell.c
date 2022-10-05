@@ -167,7 +167,7 @@ int main(unused int argc, unused char* argv[]) {
     } else if (is_redirect_out) { // >
       redirect_file = tokens_get_token(tokens, i + 1);
 
-      int redirect_fd = open(redirect_file, O_CREAT | O_TRUNC | O_WRONLY);
+      int redirect_fd = open(redirect_file, O_CREAT | O_TRUNC | O_RDWR, 0777);
       // save stdout so we can reset the redirection after our program execution
       saved_stdout = dup(STDOUT_FILENO); 
       // redirect stdout to file
