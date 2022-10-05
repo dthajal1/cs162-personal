@@ -113,7 +113,7 @@ void init_shell() {
   }
 }
 
-char *resolve(char *program_name);
+char *resolve(char *program_name, char *path);
 
 int main(unused int argc, unused char* argv[]) {
   init_shell();
@@ -126,138 +126,174 @@ int main(unused int argc, unused char* argv[]) {
     fprintf(stdout, "%d: ", line_num);
 
   while (fgets(line, 4096, stdin)) {
-    /* Split our line into words. */
-    struct tokens* tokens = tokenize(line);
+    
+    int fd[2];
+    pid_t pid;
+    int pipe_fd_in = 0;
+    char *next_process = NULL;
 
-    char *redirect_file_in = NULL;
-    char *redirect_file_out = NULL;
-    int is_redirect_in = 0;
-    int is_redirect_out = 0;
-    int saved_stdout;
-    int saved_stdin;
+    bool is_pipe = strstr(line, "|") != NULL;
 
-    /* prepare args for execv (+ for redirection) */
-    size_t args_len = tokens_get_length(tokens);
-    char *new_args[args_len];
-    unsigned int j = 0;
-    for (unsigned int i = 0; i < args_len && (!is_redirect_in || !is_redirect_out); i++) {
-      char *cur_token = tokens_get_token(tokens, i);
-      if (strcmp(cur_token, ">") == 0) {
-        is_redirect_out += 1;
-        redirect_file_out = tokens_get_token(tokens, i + 1);
-        i++;
-        // break;
-      } else if (strcmp(cur_token, "<") == 0) {
-        is_redirect_in += 1;
-        redirect_file_in = tokens_get_token(tokens, i + 1);
-        i++;
-        // break;
-      } else {
-        new_args[j] = cur_token;
-        j++;
-      }
-    }
-    new_args[j] = NULL;
+    // split different processes separated by |
+    char *processes = strtok(line, "|");
+    while (processes != NULL) {
+      char *ith_process = processes;
 
-    // handle redirection
-    if (is_redirect_in == 1 && is_redirect_out == 1) {
-      // printf("hello world\n");
-
-      int redirect_fd_in = open(redirect_file_in, O_RDONLY);
-      // save stdout so we can reset the redirection after our program execution
-      saved_stdin = dup(STDIN_FILENO); 
-      // redirect stdout to file
-      dup2(redirect_fd_in, STDIN_FILENO);
-      close(redirect_fd_in);
-
-      
-      int redirect_fd_out = open(redirect_file_out, O_CREAT | O_TRUNC | O_RDWR, 0777);
-      // save stdout so we can reset the redirection after our program execution
-      saved_stdout = dup(STDOUT_FILENO); 
-      // redirect stdout to file
-      dup2(redirect_fd_out, STDOUT_FILENO);
-      close(redirect_fd_out);
-
-    } else if (is_redirect_in) { // <
-      // redirect_file = tokens_get_token(tokens, i + 1);
-
-      int redirect_fd_in = open(redirect_file_in, O_RDONLY);
-      // save stdin so we can reset the redirection after our program execution
-      saved_stdin = dup(STDIN_FILENO); 
-      // redirect stdin to file
-      dup2(redirect_fd_in, STDIN_FILENO);
-      close(redirect_fd_in);
-
-    } else if (is_redirect_out) { // >
-      // redirect_file = tokens_get_token(tokens, i + 1);
-
-      int redirect_fd_out = open(redirect_file_out, O_CREAT | O_TRUNC | O_RDWR, 0777);
-      // save stdout so we can reset the redirection after our program execution
-      saved_stdout = dup(STDOUT_FILENO); 
-      // redirect stdout to file
-      dup2(redirect_fd_out, STDOUT_FILENO);
-      close(redirect_fd_out);
-    }
-
-    /* Find which built-in function to run. */
-    int fundex = lookup(tokens_get_token(tokens, 0));
-
-    if (fundex >= 0) {
-      cmd_table[fundex].fun(tokens);
-    } else {
-      /* REPLACE this to run commands as programs. */
-      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
-
-      int status;
-      pid_t cpid = fork();
-      if (cpid > 0) {
-        // running in parent process: wait until child process completes
-        // and then continue listening for more commands
-        wait(&status);
-
-        // execv done. reset redirection
-        if (is_redirect_in == 1 && is_redirect_out == 1) {
-          dup2(saved_stdin, STDIN_FILENO);
-          close(saved_stdin);
-
-          dup2(saved_stdout, STDOUT_FILENO);
-          close(saved_stdout);
-        } else if (is_redirect_in) {
-          // reset redirection back to STDIN
-          dup2(saved_stdin, STDIN_FILENO);
-          close(saved_stdin);
-        } else if (is_redirect_out) {
-          // reset redirection back to STDOUT
-          dup2(saved_stdout, STDOUT_FILENO);
-          close(saved_stdout);
-        }
-      } else if (cpid == 0) {
-        // runnning in child process: do the work here
-        char *path_to_new_program = resolve(tokens_get_token(tokens, 0));\
-        if (path_to_new_program == NULL) {
-          fprintf(stdout, "This shell doesn't know how to run programs.\n");
-          exit(0);
-        } else {
-          execv(path_to_new_program, new_args);
-
-          /* execv doesn’t return when it works. So, if we got here, it failed! */
-          perror("execv failed");
+      if (is_pipe) {
+        if (pipe(fd) == -1) {
+          perror("pipe failed");
           exit(-1);
         }
-      } else {
-        // foking failed
-        perror("Fork failed");
       }
+      
+
+      /* Split a processes args into words. */
+      struct tokens* tokens = tokenize(ith_process);
+
+      char *redirect_file_in = NULL;
+      char *redirect_file_out = NULL;
+      int is_redirect_in = 0;
+      int is_redirect_out = 0;
+      int saved_stdout;
+      int saved_stdin;
+
+      /* prepare args for execv (+ for redirection) */
+      size_t args_len = tokens_get_length(tokens);
+      char *new_args[args_len];
+      unsigned int j = 0;
+      for (unsigned int i = 0; i < args_len && (!is_redirect_in || !is_redirect_out); i++) {
+        char *cur_token = tokens_get_token(tokens, i);
+        if (strcmp(cur_token, ">") == 0) {
+          is_redirect_out += 1;
+          redirect_file_out = tokens_get_token(tokens, i + 1);
+          i++;
+          // break;
+        } else if (strcmp(cur_token, "<") == 0) {
+          is_redirect_in += 1;
+          redirect_file_in = tokens_get_token(tokens, i + 1);
+          i++;
+          // break;
+        } else {
+          new_args[j] = cur_token;
+          j++;
+        }
+      }
+      new_args[j] = NULL;
+
+      // handle redirection
+      if (is_redirect_in == 1 && is_redirect_out == 1) {
+        int redirect_fd_in = open(redirect_file_in, O_RDONLY);
+        // save stdout so we can reset the redirection after our program execution
+        saved_stdin = dup(STDIN_FILENO); 
+        // redirect stdout to file
+        dup2(redirect_fd_in, STDIN_FILENO);
+        close(redirect_fd_in);
+
+        
+        int redirect_fd_out = open(redirect_file_out, O_CREAT | O_TRUNC | O_RDWR, 0777);
+        // save stdout so we can reset the redirection after our program execution
+        saved_stdout = dup(STDOUT_FILENO); 
+        // redirect stdout to file
+        dup2(redirect_fd_out, STDOUT_FILENO);
+        close(redirect_fd_out);
+
+      } else if (is_redirect_in) { // <
+        int redirect_fd_in = open(redirect_file_in, O_RDONLY);
+        // save stdin so we can reset the redirection after our program execution
+        saved_stdin = dup(STDIN_FILENO); 
+        // redirect stdin to file
+        dup2(redirect_fd_in, STDIN_FILENO);
+        close(redirect_fd_in);
+
+      } else if (is_redirect_out) { // >
+        int redirect_fd_out = open(redirect_file_out, O_CREAT | O_TRUNC | O_RDWR, 0777);
+        // save stdout so we can reset the redirection after our program execution
+        saved_stdout = dup(STDOUT_FILENO); 
+        // redirect stdout to file
+        dup2(redirect_fd_out, STDOUT_FILENO);
+        close(redirect_fd_out);
+      }
+
+      /* Find which built-in function to run. */
+      int fundex = lookup(tokens_get_token(tokens, 0));
+
+      if (fundex >= 0) {
+        cmd_table[fundex].fun(tokens);
+      } else {
+        /* REPLACE this to run commands as programs. */
+        // fprintf(stdout, "This shell doesn't know how to run programs.\n");
+
+        int status;
+        pid = fork();
+        if (pid == 0) {
+          // runnning in child process: do the work here
+          char *path_to_new_program = resolve(tokens_get_token(tokens, 0), getenv("PATH"));
+          if (path_to_new_program == NULL) {
+            fprintf(stdout, "This shell doesn't know how to run programs.\n");
+            exit(0);
+          } else {
+            if (is_pipe) {
+              dup2(pipe_fd_in, STDIN_FILENO); //change input according to the old one
+
+              next_process = strtok(NULL, "|");
+              printf("next process: %s\n", next_process);
+              if (next_process != NULL) {
+                printf("hello worl !!!!!!!!!");
+                dup2(fd[1], STDOUT_FILENO);
+              }
+              close(fd[0]);
+            }
+            
+            execv(path_to_new_program, new_args);
+
+            /* execv doesn’t return when it works. So, if we got here, it failed! */
+            perror("execv failed");
+            exit(-1);
+          }
+        } else if (pid > 0) {
+          // running in parent process: wait until child process completes
+          // and then continue listening for more commands
+          wait(&status);
+
+          // execv done. reset redirection
+          if (is_redirect_in == 1 && is_redirect_out == 1) {
+            dup2(saved_stdin, STDIN_FILENO);
+            close(saved_stdin);
+
+            dup2(saved_stdout, STDOUT_FILENO);
+            close(saved_stdout);
+          } else if (is_redirect_in) {
+            // reset redirection back to STDIN
+            dup2(saved_stdin, STDIN_FILENO);
+            close(saved_stdin);
+          } else if (is_redirect_out) {
+            // reset redirection back to STDOUT
+            dup2(saved_stdout, STDOUT_FILENO);
+            close(saved_stdout);
+          }
+
+          
+          if (is_pipe) {
+            close(fd[1]);
+            pipe_fd_in = fd[0]; // save input for next process
+          }
+          
+        } else {
+          // foking failed
+          perror("Fork failed");
+        }
+      }
+
+      if (shell_is_interactive)
+        /* Please only print shell prompts when standard input is not a tty */
+        fprintf(stdout, "%d: ", ++line_num);
+
+      /* Clean up memory */
+      tokens_destroy(tokens);
+
+      processes = next_process;
     }
-
-    if (shell_is_interactive)
-      /* Please only print shell prompts when standard input is not a tty */
-      fprintf(stdout, "%d: ", ++line_num);
-
-    /* Clean up memory */
-    tokens_destroy(tokens);
   }
-
   return 0;
 }
 
@@ -265,36 +301,46 @@ int main(unused int argc, unused char* argv[]) {
 /* Look for a program called PROGRAM_NAME in each directory listed in 
   the PATH environment variable and return first one it finds. Returns
   NULL if it doesn't exists. */
-char *resolve(char *program_name) {
+char *resolve(char *program_name, char *path) {
   // no need to resolve path if absolute path
   if (access(program_name, F_OK) == 0) {
     return program_name;
   }
 
-  char *path = getenv("PATH");
-
-  // split path by colon
-  char *dir = strtok(path, ":");
-  while (dir != NULL) {
-    char *file_name = malloc(sizeof(char) * 4096);
-    if (file_name == NULL) {
-      perror("filename malloc failed");
-      exit(-1);
-    }
-
-    // append program_name to end of each directory in PATH
-    // and check if it that file exists
-    strcpy(file_name, dir);
-    strcat(file_name, "/");
-    strcat(file_name, program_name);  
-    if (access(file_name, F_OK) == 0)  {
-      // file exists
-      return file_name;
-    }
-    // file doesn't exists
-    free(file_name);
-    dir = strtok(NULL, ":");
+  if (strlen(path) == 0) {
+    return NULL;
   }
 
-  return NULL;
+  char *cur_dir = malloc(sizeof(char) * strlen(path));
+  if (cur_dir == NULL) {
+    perror("filename malloc failed");
+    exit(-1);
+  }
+
+  // set up to copy path upto first occurence of :
+  int len_to_copy = 0;
+  unsigned int i;
+  for (i = 0; i < strlen(path); i++) {
+    if (path[i] == ':') {
+      break;
+    } else {
+      len_to_copy++;
+    }
+  }
+
+  // append program_name to end of each directory in PATH
+  // and check if it that file exists
+  strncpy(cur_dir, path, len_to_copy);
+  strcat(cur_dir, "/");
+  strcat(cur_dir, program_name);  
+  if (access(cur_dir, F_OK) == 0)  {
+    // file exists
+    return cur_dir;
+  }
+  // file doesn't exists
+  free(cur_dir);
+
+  // prepare path for next call
+  path += len_to_copy + 1;
+  return resolve(program_name, path);
 }
