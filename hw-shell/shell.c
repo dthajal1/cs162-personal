@@ -129,6 +129,52 @@ int main(unused int argc, unused char* argv[]) {
     /* Split our line into words. */
     struct tokens* tokens = tokenize(line);
 
+    char *redirect_file = NULL;
+    bool is_redirect_in = false;
+    bool is_redirect_out = false;
+    int saved_stdout;
+    int saved_stdin;
+
+    /* prepare args for execv (+ for redirection) */
+    size_t args_len = tokens_get_length(tokens);
+    char *new_args[args_len];
+    unsigned int i;
+    for (i = 0; i < args_len && (!is_redirect_in || !is_redirect_out); i++) {
+      char *cur_token = tokens_get_token(tokens, i);
+      if (strcmp(cur_token, ">") == 0) {
+        is_redirect_out = true;
+        break;
+      } else if (strcmp(cur_token, "<") == 0) {
+        is_redirect_in = true;
+        break;
+      } else {
+        new_args[i] = cur_token;
+      }
+    }
+    new_args[i] = NULL;
+
+    // handle redirection
+    if (is_redirect_in) { // <
+      redirect_file = tokens_get_token(tokens, i + 1);
+
+      int redirect_fd = open(redirect_file, O_RDONLY);
+      // save stdout so we can reset the redirection after our program execution
+      saved_stdin = dup(STDIN_FILENO); 
+      // redirect stdout to file
+      dup2(redirect_fd, STDIN_FILENO);
+      close(redirect_fd);
+
+    } else if (is_redirect_out) { // >
+      redirect_file = tokens_get_token(tokens, i + 1);
+
+      int redirect_fd = open(redirect_file, O_CREAT | O_TRUNC | O_RDWR);
+      // save stdout so we can reset the redirection after our program execution
+      saved_stdout = dup(STDOUT_FILENO); 
+      // redirect stdout to file
+      dup2(redirect_fd, STDOUT_FILENO);
+      close(redirect_fd);
+    }
+
     /* Find which built-in function to run. */
     int fundex = lookup(tokens_get_token(tokens, 0));
 
@@ -144,6 +190,17 @@ int main(unused int argc, unused char* argv[]) {
         // running in parent process: wait until child process completes
         // and then continue listening for more commands
         wait(&status);
+
+        // reset redirection
+        if (is_redirect_in) {
+          // reset redirection back to STDOUT
+          dup2(saved_stdin, STDIN_FILENO);
+          close(saved_stdout);
+        } else if (is_redirect_out) {
+          // reset redirection back to STDOUT
+          dup2(saved_stdout, STDOUT_FILENO);
+          close(saved_stdout);
+        }
       } else if (cpid == 0) {
         // runnning in child process: do the work here
         char *path_to_new_program = resolve(tokens_get_token(tokens, 0));\
@@ -151,14 +208,6 @@ int main(unused int argc, unused char* argv[]) {
           fprintf(stdout, "This shell doesn't know how to run programs.\n");
           exit(0);
         } else {
-          /* prepare args to execv */
-          size_t args_len = tokens_get_length(tokens);
-          char *new_args[args_len];
-          for (unsigned int i = 0; i < args_len; i++) {
-            new_args[i] = tokens_get_token(tokens, i);
-          }
-          new_args[args_len] = NULL;
-
           execv(path_to_new_program, new_args);
 
           /* execv doesn’t return when it works. So, if we got here, it failed! */
