@@ -167,7 +167,7 @@ int main(unused int argc, unused char* argv[]) {
     } else if (is_redirect_out) { // >
       redirect_file = tokens_get_token(tokens, i + 1);
 
-      int redirect_fd = open(redirect_file, O_CREAT | O_TRUNC | O_RDWR);
+      int redirect_fd = open(redirect_file, O_CREAT | O_TRUNC | O_WRONLY);
       // save stdout so we can reset the redirection after our program execution
       saved_stdout = dup(STDOUT_FILENO); 
       // redirect stdout to file
@@ -191,11 +191,11 @@ int main(unused int argc, unused char* argv[]) {
         // and then continue listening for more commands
         wait(&status);
 
-        // reset redirection
+        // execv done. reset redirection
         if (is_redirect_in) {
-          // reset redirection back to STDOUT
+          // reset redirection back to STDIN
           dup2(saved_stdin, STDIN_FILENO);
-          close(saved_stdout);
+          close(saved_stdin);
         } else if (is_redirect_out) {
           // reset redirection back to STDOUT
           dup2(saved_stdout, STDOUT_FILENO);
