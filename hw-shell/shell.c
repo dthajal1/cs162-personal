@@ -129,50 +129,74 @@ int main(unused int argc, unused char* argv[]) {
     /* Split our line into words. */
     struct tokens* tokens = tokenize(line);
 
-    char *redirect_file = NULL;
-    bool is_redirect_in = false;
-    bool is_redirect_out = false;
+    char *redirect_file_in = NULL;
+    char *redirect_file_out = NULL;
+    int is_redirect_in = 0;
+    int is_redirect_out = 0;
     int saved_stdout;
     int saved_stdin;
 
     /* prepare args for execv (+ for redirection) */
     size_t args_len = tokens_get_length(tokens);
     char *new_args[args_len];
-    unsigned int i;
-    for (i = 0; i < args_len && (!is_redirect_in || !is_redirect_out); i++) {
+    unsigned int j = 0;
+    for (unsigned int i = 0; i < args_len && (!is_redirect_in || !is_redirect_out); i++) {
       char *cur_token = tokens_get_token(tokens, i);
       if (strcmp(cur_token, ">") == 0) {
-        is_redirect_out = true;
-        break;
+        is_redirect_out += 1;
+        redirect_file_out = tokens_get_token(tokens, i + 1);
+        i++;
+        // break;
       } else if (strcmp(cur_token, "<") == 0) {
-        is_redirect_in = true;
-        break;
+        is_redirect_in += 1;
+        redirect_file_in = tokens_get_token(tokens, i + 1);
+        i++;
+        // break;
       } else {
-        new_args[i] = cur_token;
+        new_args[j] = cur_token;
+        j++;
       }
     }
-    new_args[i] = NULL;
+    new_args[j] = NULL;
 
     // handle redirection
-    if (is_redirect_in) { // <
-      redirect_file = tokens_get_token(tokens, i + 1);
+    if (is_redirect_in == 1 && is_redirect_out == 1) {
+      // printf("hello world\n");
 
-      int redirect_fd = open(redirect_file, O_RDONLY);
+      int redirect_fd_in = open(redirect_file_in, O_RDONLY);
       // save stdout so we can reset the redirection after our program execution
       saved_stdin = dup(STDIN_FILENO); 
       // redirect stdout to file
-      dup2(redirect_fd, STDIN_FILENO);
-      close(redirect_fd);
+      dup2(redirect_fd_in, STDIN_FILENO);
+      close(redirect_fd_in);
 
-    } else if (is_redirect_out) { // >
-      redirect_file = tokens_get_token(tokens, i + 1);
-
-      int redirect_fd = open(redirect_file, O_CREAT | O_TRUNC | O_RDWR, 0777);
+      
+      int redirect_fd_out = open(redirect_file_out, O_CREAT | O_TRUNC | O_RDWR, 0777);
       // save stdout so we can reset the redirection after our program execution
       saved_stdout = dup(STDOUT_FILENO); 
       // redirect stdout to file
-      dup2(redirect_fd, STDOUT_FILENO);
-      close(redirect_fd);
+      dup2(redirect_fd_out, STDOUT_FILENO);
+      close(redirect_fd_out);
+
+    } else if (is_redirect_in) { // <
+      // redirect_file = tokens_get_token(tokens, i + 1);
+
+      int redirect_fd_in = open(redirect_file_in, O_RDONLY);
+      // save stdin so we can reset the redirection after our program execution
+      saved_stdin = dup(STDIN_FILENO); 
+      // redirect stdin to file
+      dup2(redirect_fd_in, STDIN_FILENO);
+      close(redirect_fd_in);
+
+    } else if (is_redirect_out) { // >
+      // redirect_file = tokens_get_token(tokens, i + 1);
+
+      int redirect_fd_out = open(redirect_file_out, O_CREAT | O_TRUNC | O_RDWR, 0777);
+      // save stdout so we can reset the redirection after our program execution
+      saved_stdout = dup(STDOUT_FILENO); 
+      // redirect stdout to file
+      dup2(redirect_fd_out, STDOUT_FILENO);
+      close(redirect_fd_out);
     }
 
     /* Find which built-in function to run. */
@@ -192,7 +216,13 @@ int main(unused int argc, unused char* argv[]) {
         wait(&status);
 
         // execv done. reset redirection
-        if (is_redirect_in) {
+        if (is_redirect_in == 1 && is_redirect_out == 1) {
+          dup2(saved_stdin, STDIN_FILENO);
+          close(saved_stdin);
+
+          dup2(saved_stdout, STDOUT_FILENO);
+          close(saved_stdout);
+        } else if (is_redirect_in) {
           // reset redirection back to STDIN
           dup2(saved_stdin, STDIN_FILENO);
           close(saved_stdin);
