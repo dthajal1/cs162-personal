@@ -113,6 +113,8 @@ void init_shell() {
   }
 }
 
+char *resolve(char *program_name);
+
 int main(unused int argc, unused char* argv[]) {
   init_shell();
 
@@ -140,24 +142,29 @@ int main(unused int argc, unused char* argv[]) {
       pid_t cpid = fork();
       if (cpid > 0) {
         // running in parent process: wait until child process completes
-              // and then continue listening for more commands
+        // and then continue listening for more commands
         wait(&status);
       } else if (cpid == 0) {
         // runnning in child process: do the work here
-        char *path_to_new_program = tokens_get_token(tokens, 0);
+        char *path_to_new_program = resolve(tokens_get_token(tokens, 0));\
+        if (path_to_new_program == NULL) {
+          fprintf(stdout, "This shell doesn't know how to run programs.\n");
+          exit(0);
+        } else {
+          /* prepare args to execv */
+          size_t args_len = tokens_get_length(tokens);
+          char *new_args[args_len];
+          for (unsigned int i = 0; i < args_len; i++) {
+            new_args[i] = tokens_get_token(tokens, i);
+          }
+          new_args[args_len] = NULL;
 
-        size_t args_len = tokens_get_length(tokens);
-        char *new_args[args_len];
-        for (unsigned int i = 0; i < args_len; i++) {
-          new_args[i] = tokens_get_token(tokens, i);
+          execv(path_to_new_program, new_args);
+
+          /* execv doesn’t return when it works. So, if we got here, it failed! */
+          perror("execv failed");
+          exit(-1);
         }
-        new_args[args_len] = NULL;
-
-        execv(path_to_new_program, new_args);
-
-        /* execv doesn’t return when it works. So, if we got here, it failed! */
-        perror("execv failed");
-        exit(-1);
       } else {
         // foking failed
         perror("Fork failed");
@@ -173,4 +180,42 @@ int main(unused int argc, unused char* argv[]) {
   }
 
   return 0;
+}
+
+
+/* Look for a program called PROGRAM_NAME in each directory listed in 
+  the PATH environment variable and return first one it finds. Returns
+  NULL if it doesn't exists. */
+char *resolve(char *program_name) {
+  // no need to resolve path if absolute path
+  if (access(program_name, F_OK) == 0) {
+    return program_name;
+  }
+
+  char *path = getenv("PATH");
+
+  // split path by colon
+  char *dir = strtok(path, ":");
+  while (dir != NULL) {
+    char *file_name = malloc(sizeof(char) * 4096);
+    if (file_name == NULL) {
+      perror("filename malloc failed");
+      exit(-1);
+    }
+
+    // append program_name to end of each directory in PATH
+    // and check if it that file exists
+    strcpy(file_name, dir);
+    strcat(file_name, "/");
+    strcat(file_name, program_name);  
+    if (access(file_name, F_OK) == 0)  {
+      // file exists
+      return file_name;
+    }
+    // file doesn't exists
+    free(file_name);
+    dir = strtok(NULL, ":");
+  }
+
+  return NULL;
 }
