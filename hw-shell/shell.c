@@ -126,27 +126,49 @@ int main(unused int argc, unused char* argv[]) {
     fprintf(stdout, "%d: ", line_num);
 
   while (fgets(line, 4096, stdin)) {
+
+    /* Count number of processes */
+    char *temp = malloc(sizeof(char) * strlen(line));
+    if (temp == NULL) {
+      perror("filename malloc failed");
+      exit(-1);
+    }
+    strncpy(temp, line, strlen(line));
+    int count;
+    for (count=0; temp[count]; temp[count]=='|' ? count++ : *temp++);
+    // should free temp somehow??
+
+    int num_pipes = count;
+    int fd[num_pipes * 2];
     
-    int fd[2];
+    // int fd[2];
     pid_t pid;
-    int pipe_fd_in = 0;
+    // int pipe_fd_in = 0;
     char *next_process = NULL;
 
+    /* parent creates all needed pipes at the start */
+    for(int i = 0; i < num_pipes; i++ ){
+      if(pipe(fd + i * 2) < 0 ){
+        perror("pipe failed");
+        exit(-1);
+      }
+    }
+
     bool is_pipe = strstr(line, "|") != NULL;
+    int process_count = 0;
 
     // split different processes separated by |
     char *processes = strtok(line, "|");
     while (processes != NULL) {
       char *ith_process = processes;
 
-      if (is_pipe) {
-        if (pipe(fd) == -1) {
-          perror("pipe failed");
-          exit(-1);
-        }
-      }
+      // if (is_pipe) {
+      //   if (pipe(fd) == -1) {
+      //     perror("pipe failed");
+      //     exit(-1);
+      //   }
+      // }
       
-
       /* Split a processes args into words. */
       struct tokens* tokens = tokenize(ith_process);
 
@@ -233,15 +255,29 @@ int main(unused int argc, unused char* argv[]) {
             exit(0);
           } else {
             if (is_pipe) {
-              dup2(pipe_fd_in, STDIN_FILENO); //change input according to the old one
-
-              next_process = strtok(NULL, "|");
-              printf("next process: %s\n", next_process);
-              if (next_process != NULL) {
-                printf("hello worl !!!!!!!!!");
-                dup2(fd[1], STDOUT_FILENO);
+              /* child gets input from the previous command,
+              if it's not the first command */
+              if (process_count > 1) {
+                if (dup2(fd[(process_count - 1) * 2], STDIN_FILENO) < 0) {
+                  perror("pipe failed");
+                  exit(-1);
+                }
               }
-              close(fd[0]);
+
+              /* child outputs to next command, if it's not
+                the last command */
+              next_process = strtok(NULL, "|");
+              if (next_process != NULL) {
+                if (dup2(fd[process_count * 2 + 1], STDOUT_FILENO) < 0) {
+                  perror("pipe failed");
+                  exit(-1);
+                }
+              }
+
+              // close all pipe-fds
+              for(int i = 0; i < 2 * num_pipes; i++){
+                close(fd[i]);
+              }
             }
             
             execv(path_to_new_program, new_args);
@@ -253,7 +289,7 @@ int main(unused int argc, unused char* argv[]) {
         } else if (pid > 0) {
           // running in parent process: wait until child process completes
           // and then continue listening for more commands
-          wait(&status);
+          // wait(&status);
 
           // execv done. reset redirection
           if (is_redirect_in == 1 && is_redirect_out == 1) {
@@ -274,8 +310,12 @@ int main(unused int argc, unused char* argv[]) {
 
           
           if (is_pipe) {
-            close(fd[1]);
-            pipe_fd_in = fd[0]; // save input for next process
+            /* parent closes all of its copies at the end */
+            for(int i = 0; i < 2 * num_pipes; i++) {
+              close(fd[i]);
+            }
+
+          wait(&status);
           }
           
         } else {
@@ -291,7 +331,12 @@ int main(unused int argc, unused char* argv[]) {
       /* Clean up memory */
       tokens_destroy(tokens);
 
-      processes = next_process;
+      if (processes == NULL) {
+        processes = strtok(NULL, "|");
+      } else {
+        processes = next_process;
+      }
+      process_count += 1;
     }
   }
   return 0;
