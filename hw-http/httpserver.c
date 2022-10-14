@@ -42,8 +42,31 @@ void serve_file(int fd, char* path) {
 
   http_start_response(fd, 200);
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
-  http_send_header(fd, "Content-Length", "0"); // TODO: change this line too
+
+  /* read from file pointed to by path into buffer */
+  int file_handler = open(path, O_RDONLY);
+  struct stat* file_info_stat = malloc(sizeof(struct stat));
+  if (stat(path, file_info_stat) == -1) {
+    perror("Failed to get file info stat");
+    exit(errno);
+  }
+  off_t file_size = file_info_stat->st_size;
+  char buffer[file_size]; // + 1 for null terminator?  might have to read 1024 bytes at a time?
+  int bytes_read = read(file_handler, buffer, file_size);
+  
+  /* convert int to str */
+  int bytes_read_len = snprintf(NULL, 0, "%d", bytes_read);
+  char* content_len = malloc(bytes_read_len + 1);
+  snprintf(content_len, bytes_read_len + 1, "%d", bytes_read);
+
+  http_send_header(fd, "Content-Length", content_len);
   http_end_headers(fd);
+
+  /* write contents pointed to by buffer to client socket fd */
+  int bytes_written = write(fd, buffer, bytes_read);
+
+  free(content_len);
+  free(file_info_stat);
 
   /* PART 2 END */
 }
@@ -117,6 +140,15 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
+  if (access(path, F_OK) == 0) { 
+    serve_file(fd, path); // file exists
+  } else {
+    http_start_response(fd, 404); // file doesn't exist
+    http_send_header(fd, "Content-Type", "text/html");
+    http_end_headers(fd);
+    close(fd);
+    return;
+  }
 
   /* PART 2 & 3 END */
 
