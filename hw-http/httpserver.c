@@ -263,7 +263,15 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
    */
 
   /* PART 1 BEGIN */
+  if (bind(*socket_number, &server_address, (socklen_t) sizeof(server_address)) == -1) {
+    perror("Failed to bind the socket");
+    exit(errno);
+  }
 
+  if (listen(*socket_number, 1024) == -1) {
+    perror("Failed to listen for incoming clients");
+    exit(errno);
+  }
   /* PART 1 END */
   printf("Listening on port %d...\n", server_port);
 
