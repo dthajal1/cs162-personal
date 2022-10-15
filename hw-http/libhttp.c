@@ -153,3 +153,10 @@ void http_format_index(char* buffer, char* path) {
   int length = strlen(path) + strlen("/index.html") + 1;
   snprintf(buffer, length, "%s/index.html", path);
 }
+
+/* Handles 404 Not Found */
+void http_handle_not_found(int fd) {
+  http_start_response(fd, 404);
+  http_send_header(fd, "Content-Type", "text/html");
+  http_end_headers(fd);
+}
