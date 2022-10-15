@@ -75,15 +75,6 @@ void serve_directory(int fd, char* path) {
 
   /* TODO: PART 3 */
   /* PART 3 BEGIN */
-
-  /* return content of index.html if it exists in given directory path */
-  int buf_len = strlen(path) + strlen("/index.html") + 1;
-  char possible_index[buf_len];
-  http_format_index(possible_index, path);
-  if (access(possible_index, F_OK) == 0) { 
-    serve_file(fd, possible_index); // file exists
-    return;
-  }
   
   // TODO: Open the directory (Hint: opendir() may be useful here)
   DIR* curr = opendir(path);
@@ -95,7 +86,7 @@ void serve_directory(int fd, char* path) {
    */
   struct dirent *entry;
   while ((entry = readdir(curr)) != NULL) {
-    buf_len = strlen("<a href=\"//\"></a><br/>") + strlen(path) + strlen(entry->d_name) * 2 + 1;
+    int buf_len = strlen("<a href=\"//\"></a><br/>") + strlen(path) + strlen(entry->d_name) * 2 + 1;
     char link_to_child[buf_len];
     http_format_href(link_to_child, path, entry->d_name);
 
@@ -157,28 +148,31 @@ void handle_files_request(int fd) {
    */
 
   /* PART 2 & 3 BEGIN */
-  struct stat path_stat;
-  if (stat(path, &path_stat) == -1) {
-    perror("Failed to get path info stat");
-    exit(errno);
+
+  /* return content of index.html if it exists in given directory path */
+  int buf_len = strlen(path) + strlen("/index.html") + 1;
+  char possible_index[buf_len];
+  http_format_index(possible_index, path);
+  if (access(possible_index, F_OK) == 0) { 
+    serve_file(fd, possible_index); // file exists
+    close(fd);
+    return;
   }
 
-  if (S_ISREG(path_stat.st_mode)) { // Regular File
-    if (access(path, F_OK) == 0) { 
-      serve_file(fd, path); // file exists
-    } else {
-      http_handle_not_found(fd);
-    }
-  } else { // Directory
-    DIR* dir = opendir(path);
-    if (dir) {
-      serve_directory(fd, path); // Directory exists
-    } else if (ENOENT == errno) {
-      http_handle_not_found(fd);
-    } else {
-      perror("Failed to open directory");
+  if (access(path, F_OK) == 0) { // path exists
+    struct stat path_stat;
+    if (stat(path, &path_stat) == -1) {
+      perror("Failed to get path info stat");
       exit(errno);
     }
+
+    if (S_ISREG(path_stat.st_mode)) {
+      serve_file(fd, path);
+    } else {
+      serve_directory(fd, path);
+    }
+  } else {
+    http_handle_not_found(fd);
   }
 
   /* PART 2 & 3 END */
