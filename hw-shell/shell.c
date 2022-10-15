@@ -315,7 +315,7 @@ int main(unused int argc, unused char* argv[]) {
               close(fd[i]);
             }
 
-          wait(&status);
+            wait(&status);
           }
           
         } else {
