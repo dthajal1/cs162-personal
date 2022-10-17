@@ -46,6 +46,7 @@ void serve_file(int fd, char* path) {
   int file_handler = open(path, O_RDONLY);
   struct stat file_info_stat;
   if (stat(path, &file_info_stat) == -1) {
+    close(fd);
     perror("Failed to get file info stat");
     exit(errno);
   }
@@ -162,6 +163,7 @@ void handle_files_request(int fd) {
   if (access(path, F_OK) == 0) { // path exists
     struct stat path_stat;
     if (stat(path, &path_stat) == -1) {
+      close(fd);
       perror("Failed to get path info stat");
       exit(errno);
     }
@@ -315,6 +317,8 @@ void* handle_clients(void* void_request_handler) {
     close(next_client_fd);
     next_client_fd = wq_pop(&work_queue);
   }
+
+  close(next_client_fd);
 
   /* PART 7 END */
 }
