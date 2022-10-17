@@ -422,6 +422,16 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
 
     /* PART 5 BEGIN */
 
+    int pid = fork();
+    if (pid == -1) {
+      perror("Failed to fork a new process");
+      exit(errno);
+    } else if (pid == 0) { 
+      // child process handles the request
+      request_handler(client_socket_number);
+    } 
+    // parent process continues to listen and accept connections
+
     /* PART 5 END */
 
 #elif THREADSERVER
