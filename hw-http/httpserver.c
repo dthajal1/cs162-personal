@@ -197,7 +197,7 @@ void* handle_two_way_communication(void* arg) {
   ssize_t bytes_read = read(src_fd, buf, buf_size);
 
   while (bytes_read > 0) {
-    int bytes_written = write(dest_fd, buf, buf_size);
+    int bytes_written = write(dest_fd, buf, bytes_read);
     if (bytes_written == -1) {
       break;
     }
