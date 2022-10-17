@@ -76,11 +76,11 @@ void serve_directory(int fd, char* path) {
   /* TODO: PART 3 */
   /* PART 3 BEGIN */
   
-  // TODO: Open the directory (Hint: opendir() may be useful here)
+  // Open the directory (Hint: opendir() may be useful here)
   DIR* curr = opendir(path);
 
   /**
-   * TODO: For each entry in the directory (Hint: look at the usage of readdir() ),
+   * For each entry in the directory (Hint: look at the usage of readdir() ),
    * send a string containing a properly formatted HTML. (Hint: the http_format_href()
    * function in libhttp.c may be useful here)
    */
@@ -181,6 +181,35 @@ void handle_files_request(int fd) {
   return;
 }
 
+struct arg_obj {
+  int src_fd;
+  int dest_fd;
+};
+
+/* Routine function. */
+void* handle_two_way_communication(void* arg) {
+  struct arg_obj *args = (struct arg_obj *) arg;
+  int src_fd = args->src_fd;
+  int dest_fd = args->dest_fd;
+
+  size_t buf_size = 1024;
+  char buf[buf_size];
+  ssize_t bytes_read = read(src_fd, buf, buf_size);
+
+  while (bytes_read > 0) {
+    int bytes_written = write(dest_fd, buf, buf_size);
+    if (bytes_written == -1) {
+      break;
+    }
+    bytes_read = read(src_fd, buf, buf_size);
+  }
+
+  /* we reach here if end of communication */
+  close(src_fd);
+  close(dest_fd);
+  pthread_exit(NULL);
+}
+
 /*
  * Opens a connection to the proxy target (hostname=server_proxy_hostname and
  * port=server_proxy_port) and relays traffic to/from the stream fd and the
@@ -244,6 +273,24 @@ void handle_proxy_request(int fd) {
 
   /* TODO: PART 4 */
   /* PART 4 BEGIN */
+  pthread_t handler_thread[2];
+  struct arg_obj arg0 = {.src_fd = fd, .dest_fd = target_fd};
+  struct arg_obj arg1 = {.src_fd = target_fd, .dest_fd = fd};
+  
+  /* client to proxy */
+  int exit_code = pthread_create(&handler_thread[0], NULL, handle_two_way_communication, &arg0);
+  if (exit_code != 0) {
+    pthread_exit(NULL);
+  }
+
+  /* proxy to client */
+  int exit_code2 = pthread_create(&handler_thread[1], NULL, handle_two_way_communication, &arg1);
+  if (exit_code2 != 0) {
+    pthread_exit(NULL);
+  }
+
+  // close(fd);
+  // close(target_fd);
 
   /* PART 4 END */
 }
