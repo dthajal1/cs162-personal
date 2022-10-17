@@ -273,24 +273,23 @@ void handle_proxy_request(int fd) {
 
   /* TODO: PART 4 */
   /* PART 4 BEGIN */
-  pthread_t handler_thread[2];
-  struct arg_obj arg0 = {.src_fd = fd, .dest_fd = target_fd};
-  struct arg_obj arg1 = {.src_fd = target_fd, .dest_fd = fd};
-  
-  /* client to proxy */
-  int exit_code = pthread_create(&handler_thread[0], NULL, handle_two_way_communication, &arg0);
-  if (exit_code != 0) {
-    pthread_exit(NULL);
-  }
+  while (1) {
+    pthread_t handler_thread[2];
+    struct arg_obj arg0 = {.src_fd = fd, .dest_fd = target_fd};
+    struct arg_obj arg1 = {.src_fd = target_fd, .dest_fd = fd};
+    
+    /* client to proxy */
+    int exit_code = pthread_create(&handler_thread[0], NULL, handle_two_way_communication, &arg0);
+    if (exit_code != 0) {
+      pthread_exit(NULL);
+    }
 
-  /* proxy to client */
-  int exit_code2 = pthread_create(&handler_thread[1], NULL, handle_two_way_communication, &arg1);
-  if (exit_code2 != 0) {
-    pthread_exit(NULL);
+    /* proxy to client */
+    int exit_code2 = pthread_create(&handler_thread[1], NULL, handle_two_way_communication, &arg1);
+    if (exit_code2 != 0) {
+      pthread_exit(NULL);
+    }
   }
-
-  // close(fd);
-  // close(target_fd);
 
   /* PART 4 END */
 }
