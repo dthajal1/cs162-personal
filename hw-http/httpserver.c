@@ -312,6 +312,7 @@ void* handle_clients(void* void_request_handler) {
 
   int next_client_fd = wq_pop(&work_queue);
   request_handler(next_client_fd);
+  close(next_client_fd);
 
   /* PART 7 END */
 }
