@@ -447,6 +447,12 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
 
     /* PART 6 BEGIN */
 
+    // the new thread handles the request 
+    pthread_t request_handler_thread;
+    pthread_create(&request_handler_thread, NULL, request_handler, client_socket_number);
+
+    // the original (main) thread conttinues to listen and accept connections
+
     /* PART 6 END */
 #elif POOLSERVER
     /*
