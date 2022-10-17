@@ -192,7 +192,7 @@ void* handle_two_way_communication(void* arg) {
   int src_fd = args->src_fd;
   int dest_fd = args->dest_fd;
 
-  size_t buf_size = 2000;
+  size_t buf_size = 10000;
   char buf[buf_size];
   ssize_t bytes_read = read(src_fd, buf, buf_size);
 
