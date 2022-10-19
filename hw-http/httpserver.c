@@ -359,7 +359,7 @@ void handle_proxy_request(int fd) {
   }
 
   close(target_fd);
-  // close(fd);
+  close(fd);
 
   /* PART 4 END */
 }
