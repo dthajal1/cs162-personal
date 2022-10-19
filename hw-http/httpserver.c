@@ -246,6 +246,7 @@ void* handle_two_way_communication(void* arg) {
     }
     bytes_read = read(src_fd, buf, buf_size);
   }
+  
 
   /* we reach here if end of communication */
   free(args);
