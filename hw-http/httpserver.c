@@ -46,17 +46,32 @@ void serve_file(int fd, char* path) {
   int file_handler = open(path, O_RDONLY);
   struct stat file_info_stat;
   if (stat(path, &file_info_stat) == -1) {
+    free(path);
     close(fd);
     perror("Failed to get file info stat");
     exit(errno);
   }
   off_t file_size = file_info_stat.st_size;
-  char buffer[file_size];
+  // char buffer[file_size];
+  char *buffer = malloc((sizeof(char) * file_size) + 1);
+  if (buffer == NULL) {
+    free(path);
+    close(fd);
+    perror("Failed to malloc content len");
+    exit(errno);
+  }
   int bytes_read = read(file_handler, buffer, file_size);
   
   /* convert int to str */
   int bytes_read_len = snprintf(NULL, 0, "%d", bytes_read);
   char* content_len = malloc(bytes_read_len + 1);
+  if (content_len == NULL) {
+    free(path);
+    free(buffer);
+    close(fd);
+    perror("Failed to malloc content len");
+    exit(errno);
+  }
   snprintf(content_len, bytes_read_len + 1, "%d", bytes_read);
 
   http_send_header(fd, "Content-Length", content_len);
@@ -65,6 +80,7 @@ void serve_file(int fd, char* path) {
   /* write contents pointed to by buffer to client socket fd */
   write(fd, buffer, bytes_read);
 
+  free(buffer);
   free(content_len);
   /* PART 2 END */
 }
@@ -88,10 +104,19 @@ void serve_directory(int fd, char* path) {
   struct dirent *entry;
   while ((entry = readdir(curr)) != NULL) {
     int buf_len = strlen("<a href=\"//\"></a><br/>") + strlen(path) + strlen(entry->d_name) * 2 + 1;
-    char link_to_child[buf_len];
+    // char link_to_child[buf_len];
+    char *link_to_child = malloc((sizeof(char) * buf_len) + 1);
+    if (link_to_child == NULL) {
+      free(path);
+      close(fd);
+      perror("Failed to malloc content len");
+      exit(errno);
+    }
     http_format_href(link_to_child, path, entry->d_name);
 
     write(fd, link_to_child, buf_len);
+
+    free(link_to_child);
   }
 
   closedir(curr);
@@ -152,11 +177,18 @@ void handle_files_request(int fd) {
 
   /* return content of index.html if it exists in given directory path */
   int buf_len = strlen(path) + strlen("/index.html") + 1;
-  char possible_index[buf_len];
+  // char possible_index[buf_len];
+  char *possible_index = malloc(sizeof(char) * buf_len);
+  if (possible_index == NULL) {
+    close(fd);
+    perror("Failed to get path info stat");
+    exit(errno);
+  }
   http_format_index(possible_index, path);
   if (access(possible_index, F_OK) == 0) { 
     serve_file(fd, possible_index); // file exists
     close(fd);
+    free(possible_index);
     return;
   }
 
@@ -164,6 +196,7 @@ void handle_files_request(int fd) {
     struct stat path_stat;
     if (stat(path, &path_stat) == -1) {
       close(fd);
+      free(possible_index);
       perror("Failed to get path info stat");
       exit(errno);
     }
@@ -177,6 +210,7 @@ void handle_files_request(int fd) {
     http_handle_not_found(fd);
   }
 
+  free(possible_index);
   /* PART 2 & 3 END */
 
   close(fd);
@@ -195,7 +229,14 @@ void* handle_two_way_communication(void* arg) {
   int dest_fd = args->dest_fd;
 
   size_t buf_size = 10000;
-  char buf[buf_size];
+  // char buf[buf_size];
+  char *buf = malloc((sizeof(char) * buf_size) + 1);
+  if (buf == NULL) {
+    close(src_fd);
+    close(dest_fd);
+    perror("Failed to malloc buf");
+    exit(errno);
+  }
   ssize_t bytes_read = read(src_fd, buf, buf_size);
 
   while (bytes_read > 0) {
@@ -207,8 +248,10 @@ void* handle_two_way_communication(void* arg) {
   }
 
   /* we reach here if end of communication */
-  close(src_fd);
-  close(dest_fd);
+  free(args);
+  free(buf);
+  // close(src_fd);
+  // close(dest_fd);
   pthread_exit(NULL);
 }
 
@@ -277,21 +320,46 @@ void handle_proxy_request(int fd) {
   /* PART 4 BEGIN */
   while (1) {
     pthread_t handler_thread[2];
-    struct arg_obj arg0 = {.src_fd = fd, .dest_fd = target_fd};
-    struct arg_obj arg1 = {.src_fd = target_fd, .dest_fd = fd};
+    // struct arg_obj arg0 = {.src_fd = fd, .dest_fd = target_fd};
+    // struct arg_obj arg1 = {.src_fd = target_fd, .dest_fd = fd};
     
     /* client to proxy */
-    int exit_code = pthread_create(&handler_thread[0], NULL, handle_two_way_communication, &arg0);
+    struct arg_obj *arg0 = malloc(sizeof(struct arg_obj));
+    if (arg0 == NULL) {
+      close(target_fd);
+      close(fd);
+      perror("Failed to malloc arg_obj");
+      exit(errno);
+    }
+    arg0->src_fd = fd;
+    arg0->dest_fd = target_fd;
+    int exit_code = pthread_create(&handler_thread[0], NULL, handle_two_way_communication, arg0);
     if (exit_code != 0) {
+      close(target_fd);
+      close(fd);
       pthread_exit(NULL);
     }
 
     /* proxy to client */
-    int exit_code2 = pthread_create(&handler_thread[1], NULL, handle_two_way_communication, &arg1);
+    struct arg_obj *arg1 = malloc(sizeof(struct arg_obj));
+    if (arg1 == NULL) {
+      close(target_fd);
+      close(fd);
+      perror("Failed to malloc arg_obj");
+      exit(errno);
+    }
+    arg0->src_fd = target_fd;
+    arg0->dest_fd = fd;
+    int exit_code2 = pthread_create(&handler_thread[1], NULL, handle_two_way_communication, arg1);
     if (exit_code2 != 0) {
+      close(target_fd);
+      close(fd);
       pthread_exit(NULL);
     }
   }
+
+  close(target_fd);
+  // close(fd);
 
   /* PART 4 END */
 }
@@ -314,11 +382,8 @@ void* handle_clients(void* void_request_handler) {
   int next_client_fd = wq_pop(&work_queue);
   while (next_client_fd) {
     request_handler(next_client_fd);
-    close(next_client_fd);
     next_client_fd = wq_pop(&work_queue);
   }
-
-  close(next_client_fd);
 
   /* PART 7 END */
 }
@@ -445,7 +510,9 @@ void serve_forever(int* socket_number, void (*request_handler)(int)) {
     } else if (pid == 0) { 
       // child process handles the request
       request_handler(client_socket_number);
+      close(client_socket_number);
     } 
+    close(client_socket_number);
     // parent process continues to listen and accept connections
 
     /* PART 5 END */
