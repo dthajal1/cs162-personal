@@ -250,8 +250,8 @@ void* handle_two_way_communication(void* arg) {
   /* we reach here if end of communication */
   free(args);
   free(buf);
-  // close(src_fd);
-  // close(dest_fd);
+  close(src_fd);
+  close(dest_fd);
   pthread_exit(NULL);
 }
 
@@ -358,8 +358,8 @@ void handle_proxy_request(int fd) {
     }
   }
 
-  close(target_fd);
-  close(fd);
+  // close(target_fd);
+  // close(fd);
 
   /* PART 4 END */
 }
