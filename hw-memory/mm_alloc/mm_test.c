@@ -51,6 +51,29 @@ static void coalesce_freed_memory() {
   mm_free(data3);
 }
 
+static void coalesce_multiple_freed_memory() {
+  size_t size = 10;
+  char *data1 = mm_malloc(size);
+  char *data2 = mm_malloc(size + 5);
+  char *data3 = mm_malloc(size + 10);
+  data1[0] = 'H';
+  data1[9] = 'W';
+  data2[0] = 'H';
+  data2[14] = 'W';
+  data3[0] = 'H';
+  data3[19] = 'W';
+  mm_free(data1);
+  mm_free(data2);
+  mm_free(data3);
+
+  size_t sum_sizes = size * 3 + 10 + 5;
+  char *data4 = mm_malloc(sum_sizes);
+  for (size_t i = 0; i < sum_sizes; i++) {
+    assert(data4[i] == 0);
+  }
+  mm_free(data4);
+}
+
 int main() {
   load_alloc_functions();
 
@@ -64,7 +87,11 @@ int main() {
   // reuse_free_memory();
   // puts("reuse free memory passes!");
 
-  puts("testing coalesce freed memory");
-  coalesce_freed_memory();
-  puts("coalesce freed memory passes!");
+  // puts("testing coalesce freed memory");
+  // coalesce_freed_memory();
+  // puts("coalesce freed memory passes!");
+
+  puts("testing coalesce multiple freed memory");
+  coalesce_multiple_freed_memory();
+  puts("coalesce multiple freed memory passes!");
 }

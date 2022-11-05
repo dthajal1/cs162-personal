@@ -44,6 +44,7 @@ void* mm_malloc(size_t size) {
     if (free_block->size > size) {
       free_block = split_block(size, free_block);
     }
+    memset(free_block->data, 0, size); // need this?
     return free_block->data;
   } else { // use sbrk to malloc
     mem_block *new_block = sbrk(sizeof(mem_block) + size * sizeof(char));
