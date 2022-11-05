@@ -44,6 +44,7 @@ void* mm_malloc(size_t size) {
     if (free_block->size > size) {
       free_block = split_block(size, free_block);
     }
+    free_block->free = false;
     memset(free_block->data, 0, size); // need this?
     return free_block->data;
   } else { // use sbrk to malloc
@@ -173,7 +174,7 @@ void* split_block(size_t size, mem_block* free_block) {
   free_block->size = size;
 
   left_over_block->free = true;
-  
+
   return free_block;
   /* ex. 
     have: a <-> b <-> c
