@@ -42,7 +42,7 @@ static void reuse_free_memory() {
 }
 
 static void split_large_blocks() {
-  size_t size = 100;
+  size_t size = 1000000;
   char *data1 = mm_malloc(size);
   char *data2 = mm_malloc(size);
   mm_free(data1);

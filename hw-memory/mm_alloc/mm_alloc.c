@@ -166,7 +166,7 @@ void* split_block(size_t size, mem_block* free_block) {
   size_t orginal_size = free_block->size;
   free_block->size = size;
 
-  mem_block *left_over_block = free_block + sizeof(mem_block) + size * sizeof(char);
+  mem_block *left_over_block = (void *) free_block + sizeof(mem_block *) + size * sizeof(char);
 
   left_over_block->prev = free_block;
   left_over_block->next = free_block->next;
