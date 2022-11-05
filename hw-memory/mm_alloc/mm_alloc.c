@@ -163,6 +163,9 @@ mem_block* find_free_block(size_t size) {
 /* Split FREE_BLOCK in two blocks. First block of size SIZE and other of size FREE_BLOCK->size - SIZE.
   Return first block.*/
 void* split_block(size_t size, mem_block* free_block) {
+  size_t orginal_size = free_block->size;
+  free_block->size = size;
+
   mem_block *left_over_block = free_block + sizeof(mem_block) + size * sizeof(char);
 
   left_over_block->prev = free_block;
@@ -170,8 +173,7 @@ void* split_block(size_t size, mem_block* free_block) {
   free_block->next->prev = left_over_block;
   free_block->next = left_over_block;
 
-  left_over_block->size = free_block->size - size;
-  free_block->size = size;
+  left_over_block->size = orginal_size - size;
 
   left_over_block->free = true;
 
