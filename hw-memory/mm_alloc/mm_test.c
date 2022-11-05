@@ -41,6 +41,16 @@ static void reuse_free_memory() {
   }
 }
 
+static void coalesce_freed_memory() {
+  size_t size = 10;
+  char *data1 = mm_malloc(size);
+  char *data2 = mm_malloc(size);
+  mm_free(data1);
+  mm_free(data2);
+  char *data3 = mm_malloc(size * 2);
+  mm_free(data3);
+}
+
 int main() {
   load_alloc_functions();
 
@@ -50,7 +60,11 @@ int main() {
   // mm_free(data);
   // puts("malloc test successful!");
 
-  puts("testing reuse free memory");
-  reuse_free_memory();
-  puts("reuse free memory passes!");
+  // puts("testing reuse free memory");
+  // reuse_free_memory();
+  // puts("reuse free memory passes!");
+
+  puts("testing coalesce freed memory");
+  coalesce_freed_memory();
+  puts("coalesce freed memory passes!");
 }

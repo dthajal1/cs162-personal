@@ -30,6 +30,8 @@ void init_sentinel() {
   head->prev = NULL;
   tail->prev = head;
   tail->next = NULL;
+  head->free = tail->free = false;
+  head->size = tail->size = 0;
 }
 
 void* mm_malloc(size_t size) {
@@ -83,7 +85,7 @@ void mm_free(void* ptr) {
     allocated_block->free = true;
     memset(allocated_block->data, 0, allocated_block->size);
 
-    coalesce_consecutive_free_blocks(ptr);
+    coalesce_consecutive_free_blocks(allocated_block);
   }
 }
 
@@ -131,7 +133,8 @@ void append(mem_block *new_block) {
   } else {
     new_block->prev = tail->prev;
     new_block->next = tail;
-    tail->prev->next = tail->prev = new_block;
+    tail->prev->next = new_block;
+    tail->prev = new_block;
   }
 
   /* Ex. append(8)
