@@ -41,6 +41,20 @@ static void reuse_free_memory() {
   }
 }
 
+static void split_large_blocks() {
+  size_t size = 100;
+  char *data1 = mm_malloc(size);
+  char *data2 = mm_malloc(size);
+  mm_free(data1);
+  
+  char *data3 = mm_malloc(size / 2);
+  char *data4 = mm_malloc(size / 2);
+
+  mm_free(data2);
+  mm_free(data3);
+  mm_free(data4);
+}
+
 static void coalesce_freed_memory() {
   size_t size = 10;
   char *data1 = mm_malloc(size);
@@ -98,6 +112,10 @@ int main() {
   // reuse_free_memory();
   // puts("reuse free memory passes!");
 
+  puts("testing split large blocks");
+  split_large_blocks();
+  puts("split large blocks passes!");
+
   // puts("testing coalesce freed memory");
   // coalesce_freed_memory();
   // puts("coalesce freed memory passes!");
@@ -106,7 +124,7 @@ int main() {
   // coalesce_multiple_freed_memory();
   // puts("coalesce multiple freed memory passes!");
 
-  puts("testing realloc");
-  test_realloc();
-  puts("realloc passes!");
+  // puts("testing realloc");
+  // test_realloc();
+  // puts("realloc passes!");
 }

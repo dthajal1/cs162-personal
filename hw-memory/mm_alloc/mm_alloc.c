@@ -163,14 +163,16 @@ mem_block* find_free_block(size_t size) {
 /* Split FREE_BLOCK in two blocks. First block of size SIZE and other of size FREE_BLOCK->size - SIZE.
   Return first block. Already appended? */
 void* split_block(size_t size, mem_block* free_block) {
-  mem_block *first_block = free_block;
-  mem_block *second_block = free_block;
+  mem_block *first_block;
+  mem_block *second_block;
 
   first_block->prev = free_block->prev;
+  first_block->next = second_block;
   free_block->prev->next = first_block; // might run into null ptr exception => need a front sentinel node (DONE)
   first_block->size = size;
 
   second_block->next = free_block->next;
+  second_block->prev = first_block;
   free_block->next->prev = second_block; // might run into null ptr exception => need an end sentinel node (DONE)
   second_block->size = free_block->size - size;
 
