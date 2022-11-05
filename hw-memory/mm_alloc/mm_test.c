@@ -74,6 +74,17 @@ static void coalesce_multiple_freed_memory() {
   mm_free(data4);
 }
 
+void test_realloc() {
+  size_t size = 10;
+  char *data1 = mm_malloc(size);
+  data1[0] = 'H';
+  data1[9] = 'W';
+  char *data2 = mm_realloc(data1, size * 2);
+  assert(data2[0] == 'H');
+  assert(data2[9] == 'W');
+  assert(data2[10] == 0);
+}
+
 int main() {
   load_alloc_functions();
 
@@ -91,7 +102,11 @@ int main() {
   // coalesce_freed_memory();
   // puts("coalesce freed memory passes!");
 
-  puts("testing coalesce multiple freed memory");
-  coalesce_multiple_freed_memory();
-  puts("coalesce multiple freed memory passes!");
+  // puts("testing coalesce multiple freed memory");
+  // coalesce_multiple_freed_memory();
+  // puts("coalesce multiple freed memory passes!");
+
+  puts("testing realloc");
+  test_realloc();
+  puts("realloc passes!");
 }

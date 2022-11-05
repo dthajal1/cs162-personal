@@ -73,10 +73,10 @@ void* mm_realloc(void* ptr, size_t size) {
 
   mem_block *old_block = find_block(ptr);
   void *new_data = mm_malloc(size);
-  memcpy(new_data, old_block->data, size);
+  memset(new_data, 0, size);
+  memcpy(new_data, old_block->data, old_block->size);
 
   mm_free(ptr);
-
   return new_data;
 }
 
