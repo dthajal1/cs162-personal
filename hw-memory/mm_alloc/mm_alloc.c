@@ -152,7 +152,6 @@ mem_block* find_free_block(size_t size) {
   mem_block *ptr = head->next;
   while (ptr != NULL) {
     if (ptr->free && ptr->size >= size) {
-      // Question: need to zero out its data??
       return ptr;
     }
     ptr = ptr->next;
@@ -163,18 +162,37 @@ mem_block* find_free_block(size_t size) {
 /* Split FREE_BLOCK in two blocks. First block of size SIZE and other of size FREE_BLOCK->size - SIZE.
   Return first block. Already appended? */
 void* split_block(size_t size, mem_block* free_block) {
-  mem_block *first_block;
-  mem_block *second_block;
+  mem_block *temp_prev = free_block->prev;
+  mem_block *temp_next = free_block->next;
+  size_t temp_size = free_block->size;
 
-  first_block->prev = free_block->prev;
+  mem_block *first_block = free_block;
+  mem_block *second_block = free_block + sizeof(mem_block) + size * sizeof(char);
+  // second block starts where first block ends
+
+  first_block->prev = temp_prev;
   first_block->next = second_block;
   free_block->prev->next = first_block; // might run into null ptr exception => need a front sentinel node (DONE)
   first_block->size = size;
+  first_block->free = true;
 
-  second_block->next = free_block->next;
+  second_block->next = temp_next;
   second_block->prev = first_block;
   free_block->next->prev = second_block; // might run into null ptr exception => need an end sentinel node (DONE)
   second_block->size = free_block->size - size;
+  second_block->free = true;
+
+  // first_block->prev = free_block->prev;
+  // first_block->next = second_block;
+  // free_block->prev->next = first_block; // might run into null ptr exception => need a front sentinel node (DONE)
+  // first_block->size = size;
+  // first_block->free = true;
+
+  // second_block->next = free_block->next;
+  // second_block->prev = first_block;
+  // free_block->next->prev = second_block; // might run into null ptr exception => need an end sentinel node (DONE)
+  // second_block->size = free_block->size - size;
+  // second_block->free = true;
 
   return first_block;
 
