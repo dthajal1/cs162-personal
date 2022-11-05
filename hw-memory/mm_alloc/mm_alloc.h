@@ -12,12 +12,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct mem_block {
-    int size;
+typedef struct mem_block {
     bool free;
-    struct mem_block *next;
-    struct mem_block *prev;
-};
+    struct mem_block *next; 
+    struct mem_block *prev; 
+    size_t size;
+    char data[];  /* pointer to the allocated data on heap */
+    /* https://en.wikipedia.org/wiki/Flexible_array_member */
+} mem_block;
 
 
 void* mm_malloc(size_t size);
