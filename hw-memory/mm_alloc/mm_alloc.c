@@ -9,10 +9,28 @@
 #include <stdio.h>
 #include <string.h>
 
-/* DLL Implementation for mem_blocks global storage. */
+/* DLL with Sentinel Nodes Implementation for mem_blocks global storage. */
 static mem_block *head, *tail;
 
+/* Initialize sentinel nodes (head and tail) if NULL.
+  Head and Tail do not hold any data.
+  E.g. after append(8) DLL will be
+    head <-> 8 <-> tail
+*/
+void init_sentinel() {
+  if (head == NULL) {
+    head = sbrk(sizeof(mem_block));
+    tail = sbrk(sizeof(mem_block));
+    head->next = tail;
+    head->prev = NULL;
+    tail->prev = head;
+    tail->next = NULL;
+  }
+}
+
 void* mm_malloc(size_t size) {
+  init_sentinenl(); // only runs once at the very beginning
+
   if (size <= 0) return NULL;
 
   // iterate through the block until sufficient free block found (block.size >= size)
@@ -81,7 +99,7 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
     // merge free_block and next_ptr block
     free_block->size += next_ptr->size;
     free_block->next = next_ptr->next;
-    next_ptr->next->prev = free_block; // might run into null ptr exception => need a end sentinel node
+    next_ptr->next->prev = free_block; // might run into null ptr exception => need an end sentinel node (DONE)
 
     next_ptr = next_ptr->next;
   }
@@ -92,7 +110,7 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
     // merge free_block and prev_ptr block
     free_block->size += prev_ptr->size;
     free_block->prev = prev_ptr->prev;
-    prev_ptr->prev->next = free_block; // might run into null ptr exception => need a front sentinel node
+    prev_ptr->prev->next = free_block; // might run into null ptr exception => need a front sentinel node (DONE)
 
     prev_ptr = prev_ptr->prev;
   }
@@ -108,20 +126,30 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
   */
 }
 
-/* Insert/Append to tail of global mem_blocks. */
+/* Insert/Append to end of global mem_blocks. */
 void append(mem_block *new_block) {
-  if (head == NULL) {
-    head = tail = new_block;
+  if (head->next == NULL) {
+    head->next = tail->prev = new_block;
+    new_block->prev = head;
+    new_block->next = tail;
   } else {
-    tail->next = new_block;
-    new_block->prev = tail;
-    tail = new_block;
+    new_block->prev = tail->prev;
+    new_block->next = tail;
+    tail->prev->next = tail->prev = new_block;
   }
+
+  /* Ex. append(8)
+    have: head <-> tail
+    want: head <-> 8 <-> tail
+
+    append(9)
+    want: head <-> 8 <-> 9 <-> tail
+  */
 }
 
 /* Find free block whose size >= SIZE. */
 mem_block* find_free_block(size_t size) {
-  mem_block *ptr = head;
+  mem_block *ptr = head->next;
   while (ptr != NULL) {
     if (ptr->free && ptr->size >= size) {
       // Question: need to zero out its data??
@@ -139,11 +167,11 @@ void* split_block(size_t size, mem_block* free_block) {
   mem_block *second_block;
 
   first_block->prev = free_block->prev;
-  free_block->prev->next = first_block;
+  free_block->prev->next = first_block; // might run into null ptr exception => need a front sentinel node (DONE)
   first_block->size = size;
 
   second_block->next = free_block->next;
-  free_block->next->prev = second_block;
+  free_block->next->prev = second_block; // might run into null ptr exception => need an end sentinel node (DONE)
   second_block->size = free_block->size - size;
 
   return first_block;
