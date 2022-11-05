@@ -124,7 +124,7 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
 
 /* Insert/Append to end of global mem_blocks. */
 void append(mem_block *new_block) {
-  if (head->next == NULL) {
+  if (head->next == tail) {
     head->next = tail->prev = new_block;
     new_block->prev = head;
     new_block->next = tail;

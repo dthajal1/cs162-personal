@@ -30,12 +30,27 @@ static void load_alloc_functions() {
   mm_free = try_dlsym(handle, "mm_free");
 }
 
+static void reuse_free_memory() {
+  size_t size = 50;
+  char *data = mm_malloc(size);
+  data[0] = 'H';
+  data[49] = 'W';
+  mm_free(data);
+  for (size_t i = 0; i < size; i++) {
+    assert(data[i] == 0);
+  }
+}
+
 int main() {
   load_alloc_functions();
 
-  int* data = mm_malloc(sizeof(int));
-  assert(data != NULL);
-  data[0] = 0x162;
-  mm_free(data);
-  puts("malloc test successful!");
+  // int* data = mm_malloc(sizeof(int));
+  // assert(data != NULL);
+  // data[0] = 0x162;
+  // mm_free(data);
+  // puts("malloc test successful!");
+
+  puts("testing reuse free memory");
+  reuse_free_memory();
+  puts("reuse free memory passes!");
 }
