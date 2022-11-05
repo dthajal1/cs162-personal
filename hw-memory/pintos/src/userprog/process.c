@@ -269,6 +269,11 @@ bool load(const char* file_name, void (**eip)(void), void** esp) {
           }
           if (!load_segment(file, file_page, (void*)mem_page, read_bytes, zero_bytes, writable))
             goto done;
+
+          /* Heap Segment. 
+            Last segment takes READ_BYTES + ZERO_BYTES bytes of virtual memory starting at MEM_PAGE. */
+          t->heap_start = (uint8_t*) mem_page + read_bytes + zero_bytes;
+          t->heap_brk = t->heap_start;
         } else
           goto done;
         break;
