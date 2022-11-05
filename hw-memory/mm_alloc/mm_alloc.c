@@ -12,58 +12,53 @@
 /* DLL with Sentinel Nodes Implementation for mem_blocks global storage. */
 static mem_block *head, *tail;
 
+void coalesce_consecutive_free_blocks(mem_block* free_block);
+void append(mem_block *new_block);
+mem_block* find_free_block(size_t size);
+void* split_block(size_t size, mem_block* free_block);
+mem_block* find_block(void *data);
+
 /* Initialize sentinel nodes (head and tail) if NULL.
   Head and Tail do not hold any data.
   E.g. after append(8) DLL will be
     head <-> 8 <-> tail
 */
 void init_sentinel() {
-  if (head == NULL) {
-    head = sbrk(sizeof(mem_block));
-    tail = sbrk(sizeof(mem_block));
-    head->next = tail;
-    head->prev = NULL;
-    tail->prev = head;
-    tail->next = NULL;
-  }
+  head = sbrk(sizeof(mem_block));
+  tail = sbrk(sizeof(mem_block));
+  head->next = tail;
+  head->prev = NULL;
+  tail->prev = head;
+  tail->next = NULL;
 }
 
 void* mm_malloc(size_t size) {
-  init_sentinenl(); // only runs once at the very beginning
-
+  if (head == NULL) {
+    init_sentinel(); // only runs once at the very beginning
+  }
   if (size <= 0) return NULL;
-
-  // iterate through the block until sufficient free block found (block.size >= size)
-    // if found_block.size > size
-      // split block in two: one for this and another for upcoming block
   mem_block *free_block = find_free_block(size);
-
-  if (free_block == NULL) {
-    // use sbrk to malloc
-    mem_block *new_block = sbrk(sizeof(mem_block) + size * sizeof(char));
-    if (new_block == (void *) -1) {
-      return NULL; // ?
-    }
-    new_block->free = false;
-    new_block->next = NULL;
-    new_block->prev = NULL;
-    new_block->size = size;
-    append(new_block);
-    return new_block->data;
-  } else {
-    // use existing free blocks
+  if (free_block != NULL) {
     if (free_block->size > size) {
       free_block = split_block(size, free_block);
     }
+    return free_block->data;
+  } else { // use sbrk to malloc
+    mem_block *new_block = sbrk(sizeof(mem_block) + size * sizeof(char));
+    if (new_block != (void *) -1) {
+      new_block->free = false;
+      new_block->next = NULL;
+      new_block->prev = NULL;
+      new_block->size = size;
+      append(new_block);
+      memset(new_block->data, 0, new_block->size);
+      return new_block->data;
+    }
+    return NULL;
   }
-
-  // use sbrk to allocate space for mem_block + metadata
-
-  return NULL;
 }
 
 void* mm_realloc(void* ptr, size_t size) {
-  // Edge cases
   if (ptr == NULL && size == 0) {
     return NULL;
   } else if (ptr == NULL && size > 0) {
@@ -73,25 +68,26 @@ void* mm_realloc(void* ptr, size_t size) {
     return NULL;
   }
 
-  // mm_free(ptr)
-  // mm_malloc(size)
-  // zero-fill the block, and finally memcpy the old data to the new block
+  mem_block *old_block = find_block(ptr);
+  void *new_data = mm_malloc(size);
+  memcpy(new_data, old_block->data, size);
 
-  return NULL;
+  mm_free(ptr);
+
+  return new_data;
 }
 
 void mm_free(void* ptr) {
-  if (ptr != NULL) {
-    // mark the mem_block pointed to by ptr as free
-    mem_block* allocated_block = (mem_block *) ptr;
+  mem_block *allocated_block = find_block(ptr);
+  if (allocated_block != NULL) {
     allocated_block->free = true;
+    memset(allocated_block->data, 0, allocated_block->size);
 
-    // coalesce consecutive free blocks upon freeing a block that is adjacent to other free block(s)
     coalesce_consecutive_free_blocks(ptr);
   }
 }
 
-/* Combine consecutive adjacent free blocks to form a free block. */
+/* Combine consecutive adjacent free blocks to form a larger free block. */
 void coalesce_consecutive_free_blocks(mem_block* free_block) {
   // Combine to the right
   mem_block *next_ptr = free_block->next;
@@ -163,8 +159,8 @@ mem_block* find_free_block(size_t size) {
 /* Split FREE_BLOCK in two blocks. First block of size SIZE and other of size FREE_BLOCK->size - SIZE.
   Return first block. Already appended? */
 void* split_block(size_t size, mem_block* free_block) {
-  mem_block *first_block;
-  mem_block *second_block;
+  mem_block *first_block = free_block;
+  mem_block *second_block = free_block;
 
   first_block->prev = free_block->prev;
   free_block->prev->next = first_block; // might run into null ptr exception => need a front sentinel node (DONE)
@@ -181,4 +177,18 @@ void* split_block(size_t size, mem_block* free_block) {
     b is large free block => split it in two
     want: a <-> d <-> e <-> c
   */
+}
+
+/* Find the mem_block given its DATA. */
+mem_block* find_block(void *data) {
+  if (data == NULL) return NULL;
+
+  mem_block *ptr = head->next;
+  while (ptr != NULL) {
+    if (ptr->data == data) {
+      return ptr;
+    }
+    ptr = ptr->next;
+  }
+  return NULL;
 }
