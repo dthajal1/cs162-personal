@@ -104,7 +104,7 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
     left_free_block = left_free_block->prev;
   }
   // combine to and keep the very left free block
-  mem_block *ptr = left_free_block->next;
+  mem_block *ptr = left_free_block->next->next;
   while (ptr && ptr->free) {
     left_free_block->size += ptr->size + sizeof(mem_block);
     left_free_block->next = ptr->next;
