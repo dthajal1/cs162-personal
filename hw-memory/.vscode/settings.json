@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "file.h": "c",
+        "process.h": "c",
+        "sbrk-simple.h": "c",
+        "lib.h": "c",
+        "stdlib.h": "c",
+        "filesys.h": "c",
+        "sbrk-oom.h": "c",
+        "math.h": "c",
+        "pagedir.h": "c",
+        "syscall-nr.h": "c"
+    }
+}

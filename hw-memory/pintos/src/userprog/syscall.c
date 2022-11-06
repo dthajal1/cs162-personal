@@ -87,7 +87,8 @@ static bool allocate_and_map(intptr_t increment) {
 
   uint8_t* allocated_pg_boundry = pg_round_up((void *)t->heap_brk);
   if ((t->heap_brk + increment) > allocated_pg_boundry) {
-    size_t num_pages = DIV_ROUND_UP(increment, PGSIZE);
+    // size_t num_pages = DIV_ROUND_UP(increment, PGSIZE);
+    size_t num_pages = increment / PGSIZE;
     uint8_t* kpages = palloc_get_multiple(PAL_USER | PAL_ZERO, num_pages);
     if (kpages != NULL) {
       uint8_t* kpage_offset = kpages;
