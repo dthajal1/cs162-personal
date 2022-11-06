@@ -86,7 +86,7 @@ static bool allocate_and_map(intptr_t increment) {
   struct thread* t = thread_current();
 
   uint8_t* allocated_pg_boundry = pg_round_up((void *)t->heap_brk);
-  if ((t->heap_brk + increment) >= allocated_pg_boundry) {
+  if ((t->heap_brk + increment) > allocated_pg_boundry) {
     size_t num_pages = DIV_ROUND_UP(increment, PGSIZE);
     uint8_t* kpages = palloc_get_multiple(PAL_USER | PAL_ZERO, num_pages);
     if (kpages != NULL) {
@@ -121,12 +121,12 @@ static bool deallocate_unused_pages(intptr_t decrement) {
     uint8_t* upage_offset = allocated_pg_boundry_base;
     while (num_pages != 0) {
       pagedir_clear_page(t->pagedir, upage_offset);
-
       upage_offset -= PGSIZE;
       num_pages -= 1;
     }
-    
-    palloc_free_multiple(allocated_pg_boundry_base, num_pages);
+    // uint8_t* first_pages = upage_offset;
+    uint8_t* first_pages = upage_offset;
+    palloc_free_multiple(first_pages, num_pages);
 
     // uint8_t* kpage = pagedir_get_page(t->pagedir, allocated_pg_boundry_base);
     // if (kpage == NULL) {
