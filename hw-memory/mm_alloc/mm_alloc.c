@@ -99,18 +99,16 @@ void mm_free(void* ptr) {
 
 /* Combine consecutive adjacent free blocks to form a larger free block. */
 void coalesce_consecutive_free_blocks(mem_block* free_block) {
-  mem_block *left_free_block = free_block->prev;
-  while (left_free_block && left_free_block->free) {
-    left_free_block = left_free_block->prev;
+  if (free_block->prev && free_block->prev->free) {
+    free_block = free_block->prev;
   }
 
-  // combine to and keep the very left free block
-  left_free_block = left_free_block->next;
-  mem_block *ptr = left_free_block->next->next;
+  // combine to right starting from very left free block
+  mem_block *ptr = free_block->next;
   while (ptr && ptr->free) {
-    left_free_block->size += ptr->size + sizeof(mem_block);
-    left_free_block->next = ptr->next;
-    ptr->next->prev = left_free_block; // might run into null ptr exception => need an end sentinel node (DONE)
+    free_block->size += ptr->size + sizeof(mem_block);
+    free_block->next = ptr->next;
+    ptr->next->prev = free_block; // might run into null ptr exception => need an end sentinel node (DONE)
 
     ptr = ptr->next;
   }
