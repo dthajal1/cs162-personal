@@ -118,7 +118,7 @@ static bool deallocate_unused_pages(intptr_t decrement) {
   uint8_t* allocated_pg_boundry_base = pg_round_down((void *)t->heap_brk);
   if ((t->heap_brk + decrement) <= allocated_pg_boundry_base) {
     size_t num_pages = DIV_ROUND_UP(decrement * -1, PGSIZE);
-    uint8_t* upage_offset = t->heap_brk - PGSIZE;
+    uint8_t* upage_offset = allocated_pg_boundry_base;
     while (num_pages != 0) {
       pagedir_clear_page(t->pagedir, upage_offset);
       upage_offset -= PGSIZE;
