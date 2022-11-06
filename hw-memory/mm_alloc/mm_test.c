@@ -66,26 +66,31 @@ static void coalesce_freed_memory() {
 }
 
 static void coalesce_multiple_freed_memory() {
-  size_t size = 10;
+  size_t size = 1000;
   char *data1 = mm_malloc(size);
   char *data2 = mm_malloc(size + 5);
   char *data3 = mm_malloc(size + 10);
   data1[0] = 'H';
-  data1[9] = 'W';
+  data1[size - 1] = 'W';
   data2[0] = 'H';
-  data2[14] = 'W';
+  data2[size + 4] = 'W';
   data3[0] = 'H';
-  data3[19] = 'W';
+  data3[size + 9] = 'W';
   mm_free(data1);
   mm_free(data2);
   mm_free(data3);
 
   size_t sum_sizes = size * 3 + 10 + 5;
+  puts("hello wrold!");
   char *data4 = mm_malloc(sum_sizes);
+  puts("hello wrold!");
   for (size_t i = 0; i < sum_sizes; i++) {
+    printf("%d\n", i);
     assert(data4[i] == 0);
   }
+  puts("hello wrold!");
   mm_free(data4);
+  puts("hello wrold!");
 }
 
 void test_realloc() {
@@ -112,17 +117,17 @@ int main() {
   // reuse_free_memory();
   // puts("reuse free memory passes!");
 
-  puts("testing split large blocks");
-  split_large_blocks();
-  puts("split large blocks passes!");
+  // puts("testing split large blocks");
+  // split_large_blocks();
+  // puts("split large blocks passes!");
 
   // puts("testing coalesce freed memory");
   // coalesce_freed_memory();
   // puts("coalesce freed memory passes!");
 
-  // puts("testing coalesce multiple freed memory");
-  // coalesce_multiple_freed_memory();
-  // puts("coalesce multiple freed memory passes!");
+  puts("testing coalesce multiple freed memory");
+  coalesce_multiple_freed_memory();
+  puts("coalesce multiple freed memory passes!");
 
   // puts("testing realloc");
   // test_realloc();

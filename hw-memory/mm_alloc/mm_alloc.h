@@ -17,7 +17,7 @@ typedef struct mem_block {
     struct mem_block *next; 
     struct mem_block *prev; 
     size_t size;
-    char data[];  /* pointer to the allocated data on heap */
+    void *data;  /* pointer to the allocated data on heap */
     /* https://en.wikipedia.org/wiki/Flexible_array_member */
 } mem_block;
 

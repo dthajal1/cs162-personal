@@ -10,7 +10,12 @@
 #include <string.h>
 
 /* DLL with Sentinel Nodes Implementation for mem_blocks global storage. */
-static mem_block *head, *tail;
+// static mem_block *head, *tail;
+mem_block sentinel_start;
+mem_block sentinel_end;
+
+static mem_block *head;
+static mem_block *tail;
 
 void coalesce_consecutive_free_blocks(mem_block* free_block);
 void append(mem_block *new_block);
@@ -24,14 +29,24 @@ mem_block* find_block(void *data);
     head <-> 8 <-> tail
 */
 void init_sentinel() {
-  head = sbrk(sizeof(mem_block));
-  tail = sbrk(sizeof(mem_block));
+  head = &sentinel_start;
+  tail = &sentinel_end;
+
   head->next = tail;
   head->prev = NULL;
   tail->prev = head;
   tail->next = NULL;
   head->free = tail->free = false;
   head->size = tail->size = 0;
+
+  // head = sbrk(sizeof(mem_block));
+  // tail = sbrk(sizeof(mem_block));
+  // head->next = tail;
+  // head->prev = NULL;
+  // tail->prev = head;
+  // tail->next = NULL;
+  // head->free = tail->free = false;
+  // head->size = tail->size = 0;
 }
 
 void* mm_malloc(size_t size) {
@@ -45,15 +60,17 @@ void* mm_malloc(size_t size) {
       free_block = split_block(size, free_block);
     }
     free_block->free = false;
+    free_block->data = (void *) free_block + sizeof(mem_block);
     memset(free_block->data, 0, size); // need this?
     return free_block->data;
   } else { // use sbrk to malloc
-    mem_block *new_block = sbrk(sizeof(mem_block) + size * sizeof(char));
+    mem_block *new_block = (mem_block *) sbrk(sizeof(mem_block) + size * sizeof(void));
     if (new_block != (void *) -1) {
       new_block->free = false;
       new_block->next = NULL;
       new_block->prev = NULL;
       new_block->size = size;
+      new_block->data = (void *) new_block + sizeof(mem_block);
       append(new_block);
       memset(new_block->data, 0, new_block->size);
       return new_block->data;
@@ -166,7 +183,8 @@ void* split_block(size_t size, mem_block* free_block) {
   size_t orginal_size = free_block->size;
   free_block->size = size;
 
-  mem_block *left_over_block = (mem_block *) ((void *) free_block + sizeof(mem_block) + size * sizeof(char));
+  mem_block *left_over_block = (mem_block *) ((void *) free_block + sizeof(mem_block) + size * sizeof(void));
+  left_over_block->data = (void *) left_over_block + sizeof(mem_block);
 
   left_over_block->prev = free_block;
   left_over_block->next = free_block->next;
