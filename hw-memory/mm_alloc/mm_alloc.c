@@ -38,15 +38,6 @@ void init_sentinel() {
   tail->next = NULL;
   head->free = tail->free = false;
   head->size = tail->size = 0;
-
-  // head = sbrk(sizeof(mem_block));
-  // tail = sbrk(sizeof(mem_block));
-  // head->next = tail;
-  // head->prev = NULL;
-  // tail->prev = head;
-  // tail->next = NULL;
-  // head->free = tail->free = false;
-  // head->size = tail->size = 0;
 }
 
 void* mm_malloc(size_t size) {
@@ -60,17 +51,15 @@ void* mm_malloc(size_t size) {
       free_block = split_block(size, free_block);
     }
     free_block->free = false;
-    free_block->data = (void *) free_block + sizeof(mem_block);
-    memset(free_block->data, 0, size); // need this?
+    memset(free_block->data, 0, size);
     return free_block->data;
   } else { // use sbrk to malloc
-    mem_block *new_block = (mem_block *) sbrk(sizeof(mem_block) + size * sizeof(void));
+    mem_block *new_block = (mem_block *) sbrk(sizeof(mem_block) + size * sizeof(char));
     if (new_block != (void *) -1) {
       new_block->free = false;
       new_block->next = NULL;
       new_block->prev = NULL;
       new_block->size = size;
-      new_block->data = (void *) new_block + sizeof(mem_block);
       append(new_block);
       memset(new_block->data, 0, new_block->size);
       return new_block->data;
@@ -110,36 +99,48 @@ void mm_free(void* ptr) {
 
 /* Combine consecutive adjacent free blocks to form a larger free block. */
 void coalesce_consecutive_free_blocks(mem_block* free_block) {
-  // Combine to the right
-  mem_block *next_ptr = free_block->next;
-  while (next_ptr && next_ptr->free) {
-    // merge free_block and next_ptr block
-    free_block->size += next_ptr->size;
-    free_block->next = next_ptr->next;
-    next_ptr->next->prev = free_block; // might run into null ptr exception => need an end sentinel node (DONE)
-
-    next_ptr = next_ptr->next;
+  mem_block *left_free_block = free_block;
+  if (free_block->prev && free_block->free) {
+    left_free_block = free_block->prev;
   }
+  // combine to right
+  mem_block *ptr = left_free_block->next;
+  while (ptr && ptr->free) {
+    left_free_block->size += ptr->size + sizeof(mem_block);
+    left_free_block->next = ptr->next;
+    ptr->next->prev = left_free_block; // might run into null ptr exception => need an end sentinel node (DONE)
+
+    ptr = ptr->next;
+  }
+
+
+  // Combine to the right
+  // mem_block *next_ptr = free_block->next;
+  // while (next_ptr && next_ptr->free) {
+  //   // merge free_block and next_ptr block
+  //   free_block->size += next_ptr->size + sizeof(mem_block);
+  //   free_block->next = next_ptr->next;
+  //   next_ptr->next->prev = free_block; // might run into null ptr exception => need an end sentinel node (DONE)
+
+  //   next_ptr = next_ptr->next;
+  // }
 
   // Combine to the left
-  mem_block *prev_ptr = free_block->prev;
-  while (prev_ptr && prev_ptr->free) {
-    // merge free_block and prev_ptr block
-    free_block->size += prev_ptr->size;
-    free_block->prev = prev_ptr->prev;
-    prev_ptr->prev->next = free_block; // might run into null ptr exception => need a front sentinel node (DONE)
+  // mem_block *prev_ptr = free_block->prev;
+  // while (prev_ptr && prev_ptr->free) {
+  //   // merge free_block and prev_ptr block
+  //   free_block->size += prev_ptr->size + sizeof(mem_block);
+  //   free_block->prev = prev_ptr->prev;
+  //   prev_ptr->prev->next = free_block; // might run into null ptr exception => need a front sentinel node (DONE)
 
-    prev_ptr = prev_ptr->prev;
-  }
+  //   prev_ptr = prev_ptr->prev;
+  // }
 
   /* Ex
-    Combine to right
+    Combine to keep merged very left free block only
     have: a <-> b <-> c
-    curr_elem = a and both b,c are free
-    want: abc
-    steps:
-      first: ab <-> c
-      second: abc => might run into null ptr => need sentinel node
+    lets say a was recently freed and now b gets freed
+    want: ab <-> c
   */
 }
 
@@ -183,8 +184,7 @@ void* split_block(size_t size, mem_block* free_block) {
   size_t orginal_size = free_block->size;
   free_block->size = size;
 
-  mem_block *left_over_block = (mem_block *) ((void *) free_block + sizeof(mem_block) + size * sizeof(void));
-  left_over_block->data = (void *) left_over_block + sizeof(mem_block);
+  mem_block *left_over_block = (mem_block *) ((void *) free_block + sizeof(mem_block) + size * sizeof(char));
 
   left_over_block->prev = free_block;
   left_over_block->next = free_block->next;

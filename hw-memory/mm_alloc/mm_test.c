@@ -68,29 +68,27 @@ static void coalesce_freed_memory() {
 static void coalesce_multiple_freed_memory() {
   size_t size = 1000;
   char *data1 = mm_malloc(size);
-  char *data2 = mm_malloc(size + 5);
-  char *data3 = mm_malloc(size + 10);
-  data1[0] = 'H';
-  data1[size - 1] = 'W';
-  data2[0] = 'H';
-  data2[size + 4] = 'W';
-  data3[0] = 'H';
-  data3[size + 9] = 'W';
+  for (size_t i = 0; i < size; i++) {
+    data1[i] = 'H';
+  }
+  char *data2 = mm_malloc(size * 2);
+  for (size_t i = 0; i < size + 2; i++) {
+    data2[i] = 'E';
+  }
+  char *data3 = mm_malloc(size * 3);
+  for (size_t i = 0; i < size * 3; i++) {
+    data3[i] = 'L';
+  }
+
   mm_free(data1);
   mm_free(data2);
   mm_free(data3);
 
-  size_t sum_sizes = size * 3 + 10 + 5;
-  puts("hello wrold!");
-  char *data4 = mm_malloc(sum_sizes);
-  puts("hello wrold!");
-  for (size_t i = 0; i < sum_sizes; i++) {
-    printf("%d\n", i);
+  char *data4 = mm_malloc(size + size * 2 + size * 3);
+  for (size_t i = 0; i < size + size * 2 + size * 3; i++) {
     assert(data4[i] == 0);
   }
-  puts("hello wrold!");
   mm_free(data4);
-  puts("hello wrold!");
 }
 
 void test_realloc() {
