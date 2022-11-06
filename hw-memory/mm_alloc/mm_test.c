@@ -129,8 +129,4 @@ int main() {
   // puts("testing realloc");
   // test_realloc();
   // puts("realloc passes!");
-
-  puts("testing realloc");
-  test_realloc();
-  puts("realloc passes!");
 }
