@@ -103,7 +103,9 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
   while (left_free_block && left_free_block->free) {
     left_free_block = left_free_block->prev;
   }
+
   // combine to and keep the very left free block
+  left_free_block = left_free_block->next;
   mem_block *ptr = left_free_block->next->next;
   while (ptr && ptr->free) {
     left_free_block->size += ptr->size + sizeof(mem_block);
@@ -115,9 +117,9 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
 
   /* Ex
     Combine to keep merged very left free block only
-    have: a <-> b <-> c
+    have: head <-> a <-> b <-> c <-> tail
     lets say a was recently freed and now b gets freed
-    want: ab <-> c
+    want: head <-> ab <-> c <-> tail
   */
 }
 

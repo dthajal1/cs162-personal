@@ -55,7 +55,7 @@ static void split_large_blocks() {
 }
 
 static void coalesce_freed_memory() {
-  size_t size = 10;
+  size_t size = 100000;
   char *data1 = mm_malloc(size);
   char *data2 = mm_malloc(size);
   mm_free(data1);
@@ -110,17 +110,17 @@ int main() {
   // mm_free(data);
   // puts("malloc test successful!");
 
-  puts("testing reuse free memory");
-  reuse_free_memory();
-  puts("reuse free memory passes!");
+  // puts("testing reuse free memory");
+  // reuse_free_memory();
+  // puts("reuse free memory passes!");
 
   // puts("testing split large blocks");
   // split_large_blocks();
   // puts("split large blocks passes!");
 
-  // puts("testing coalesce freed memory");
-  // coalesce_freed_memory();
-  // puts("coalesce freed memory passes!");
+  puts("testing coalesce freed memory");
+  coalesce_freed_memory();
+  puts("coalesce freed memory passes!");
 
   // puts("testing coalesce multiple freed memory");
   // coalesce_multiple_freed_memory();
