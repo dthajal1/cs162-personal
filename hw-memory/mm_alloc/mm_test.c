@@ -31,11 +31,10 @@ static void load_alloc_functions() {
 }
 
 static void reuse_free_memory() {
-  size_t size = 50;
+  size_t size = 10000;
   char *data = mm_malloc(size);
-  data[0] = 'H';
-  data[49] = 'W';
   mm_free(data);
+  char *data2 = mm_malloc(size);
   for (size_t i = 0; i < size; i++) {
     assert(data[i] == 0);
   }
@@ -111,9 +110,9 @@ int main() {
   // mm_free(data);
   // puts("malloc test successful!");
 
-  // puts("testing reuse free memory");
-  // reuse_free_memory();
-  // puts("reuse free memory passes!");
+  puts("testing reuse free memory");
+  reuse_free_memory();
+  puts("reuse free memory passes!");
 
   // puts("testing split large blocks");
   // split_large_blocks();
@@ -123,9 +122,9 @@ int main() {
   // coalesce_freed_memory();
   // puts("coalesce freed memory passes!");
 
-  puts("testing coalesce multiple freed memory");
-  coalesce_multiple_freed_memory();
-  puts("coalesce multiple freed memory passes!");
+  // puts("testing coalesce multiple freed memory");
+  // coalesce_multiple_freed_memory();
+  // puts("coalesce multiple freed memory passes!");
 
   // puts("testing realloc");
   // test_realloc();

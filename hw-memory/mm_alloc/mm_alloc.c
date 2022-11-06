@@ -99,11 +99,11 @@ void mm_free(void* ptr) {
 
 /* Combine consecutive adjacent free blocks to form a larger free block. */
 void coalesce_consecutive_free_blocks(mem_block* free_block) {
-  mem_block *left_free_block = free_block;
-  if (free_block->prev && free_block->free) {
-    left_free_block = free_block->prev;
+  mem_block *left_free_block = free_block->prev;
+  while (left_free_block && left_free_block->free) {
+    left_free_block = left_free_block->prev;
   }
-  // combine to right
+  // combine to and keep the very left free block
   mem_block *ptr = left_free_block->next;
   while (ptr && ptr->free) {
     left_free_block->size += ptr->size + sizeof(mem_block);
@@ -112,29 +112,6 @@ void coalesce_consecutive_free_blocks(mem_block* free_block) {
 
     ptr = ptr->next;
   }
-
-
-  // Combine to the right
-  // mem_block *next_ptr = free_block->next;
-  // while (next_ptr && next_ptr->free) {
-  //   // merge free_block and next_ptr block
-  //   free_block->size += next_ptr->size + sizeof(mem_block);
-  //   free_block->next = next_ptr->next;
-  //   next_ptr->next->prev = free_block; // might run into null ptr exception => need an end sentinel node (DONE)
-
-  //   next_ptr = next_ptr->next;
-  // }
-
-  // Combine to the left
-  // mem_block *prev_ptr = free_block->prev;
-  // while (prev_ptr && prev_ptr->free) {
-  //   // merge free_block and prev_ptr block
-  //   free_block->size += prev_ptr->size + sizeof(mem_block);
-  //   free_block->prev = prev_ptr->prev;
-  //   prev_ptr->prev->next = free_block; // might run into null ptr exception => need a front sentinel node (DONE)
-
-  //   prev_ptr = prev_ptr->prev;
-  // }
 
   /* Ex
     Combine to keep merged very left free block only
