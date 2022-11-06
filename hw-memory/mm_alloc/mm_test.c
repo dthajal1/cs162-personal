@@ -118,9 +118,9 @@ int main() {
   // split_large_blocks();
   // puts("split large blocks passes!");
 
-  puts("testing coalesce freed memory");
-  coalesce_freed_memory();
-  puts("coalesce freed memory passes!");
+  // puts("testing coalesce freed memory");
+  // coalesce_freed_memory();
+  // puts("coalesce freed memory passes!");
 
   // puts("testing coalesce multiple freed memory");
   // coalesce_multiple_freed_memory();
@@ -129,4 +129,8 @@ int main() {
   // puts("testing realloc");
   // test_realloc();
   // puts("realloc passes!");
+
+  puts("testing realloc");
+  test_realloc();
+  puts("realloc passes!");
 }

@@ -79,15 +79,20 @@ void* mm_realloc(void* ptr, size_t size) {
   }
 
   mem_block *old_block = find_block(ptr);
-  void *new_data = mm_malloc(size);
-  memset(new_data, 0, size);
-  if (size < old_block->size) {
-    memcpy(new_data, old_block->data, size);
-  } else {
-    memcpy(new_data, old_block->data, old_block->size);
+  if (old_block != NULL) {
+    void *new_data = mm_malloc(size);
+    if (new_data != NULL) {
+      memset(new_data, 0, size);
+      if (size < old_block->size) {
+        memcpy(new_data, old_block->data, size);
+      } else {
+        memcpy(new_data, old_block->data, old_block->size);
+      }
+      mm_free(ptr);
+      return new_data;
+    }
   }
-  mm_free(ptr);
-  return new_data;
+  return NULL;
 }
 
 void mm_free(void* ptr) {
