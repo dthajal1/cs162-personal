@@ -35,11 +35,20 @@ int example(int input) {
 }
 
 char* echo(char* input) {
+  /* connect to RPC server */
   CLIENT *clnt = clnt_connect(HOST);
 
   char* ret;
+  char **result;
 
-  /* TODO */
+  /* issue the RPC by calling the corresponding stub */
+  result = echo_1(&input, clnt);
+  if (result == NULL) {
+    clnt_perror(clnt, "call failed");
+    exit(1);
+  }
+  ret = strdup(*result);
+  xdr_free((xdrproc_t)xdr_string, (char*)result);
 
   clnt_destroy(clnt);
   
