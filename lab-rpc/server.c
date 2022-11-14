@@ -16,7 +16,8 @@
 #define SIG_PF void (*)(int)
 #endif
 
-/* TODO: Add global state. */
+/* Global state. Database to store (key, value) pair. */
+GHashTable *kv_store;
 
 extern void kvstore_1(struct svc_req *, struct SVCXPRT *);
 
@@ -46,7 +47,8 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  /* TODO: Initialize state. */
+  /* Initialize state (key, value) database. */
+  kv_store = g_hash_table_new(g_bytes_hash, g_bytes_equal);
 
   svc_run();
   fprintf(stderr, "%s", "svc_run returned");
