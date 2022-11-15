@@ -75,3 +75,40 @@ char **echo_1_svc(char **argp, struct svc_req *rqstp) {
 
   return &result;
 }
+
+/* PUT server-side RPC stub. */
+void *put_1_svc(k_v_pair *argp, struct svc_req *rqstp) {
+  static void *result;
+
+  // add to global key value pair storage
+  buf k = argp->k;
+  buf v = argp->v;
+  GBytes *key = g_bytes_new(k.buf_val, k.buf_len); 
+  GBytes *value = g_bytes_new(v.buf_val, v.buf_len);
+  g_hash_table_insert(kv_store, key, value);
+
+  return (void *) &result;
+}
+
+/* GET server-side RPC stub. */
+buf *get_1_svc(buf *argp, struct svc_req *rqstp) {
+  static buf result;
+
+  // lookup in global kv_store using key *BUF
+  GBytes *key = g_bytes_new(argp->buf_val, argp->buf_len);
+  GBytes *value = g_hash_table_lookup(kv_store, key);
+
+  g_bytes_unref(key);
+
+  if (value != NULL) {
+    long unsigned int len;
+    const char *data = g_bytes_get_data(value, &len); /* Sets len = strlen(value). */
+    result.buf_len = len;
+    result.buf_val = data;
+  } else {
+    result.buf_len = 0;
+  }
+
+  return &result;
+}
+

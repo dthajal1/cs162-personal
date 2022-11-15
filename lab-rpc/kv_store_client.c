@@ -58,7 +58,8 @@ char* echo(char* input) {
 void put(buf key, buf value) {
   CLIENT *clnt = clnt_connect(HOST);
 
-  /* TODO */
+  struct k_v_pair put_request = {.k = key, .v = value};
+  put_1(&put_request, clnt);
 
   clnt_destroy(clnt);
 }
@@ -67,8 +68,15 @@ buf* get(buf key) {
   CLIENT *clnt = clnt_connect(HOST);
 
   buf* ret;
+  // buf *result;
 
-  /* TODO */
+  ret = get_1(&key, clnt);
+  // if (result == NULL) {
+  //   clnt_perror(clnt, "call failed");
+  //   exit(1);
+  // }
+  // ret = result;
+  // xdr_free((xdrproc_t)xdr_int, (char *)result);
 
   clnt_destroy(clnt);
   
