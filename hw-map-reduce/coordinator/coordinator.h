@@ -23,7 +23,9 @@
 #include <sys/stat.h>
 
 typedef struct {
-  /* TODO */
+  int next_job_id;          /* next unique jobID. Starts at 0 and counts up. */   
+  GList* fifo_job_queue;  /* first-come first-serve job queue. Each element is a jobId */
+  GHashTable* jobs_map;       /* Map for job and its jobID */
 } coordinator;
 
 void coordinator_init(coordinator** coord_ptr);

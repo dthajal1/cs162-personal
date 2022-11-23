@@ -62,7 +62,28 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
 
   printf("Received submit job request\n");
 
-  /* TODO */
+  if (get_app(argp->app)) {
+    result = -1;
+  } else {
+    result = state->next_job_id;
+    state->next_job_id++;
+
+    state->fifo_job_queue = g_list_append(state->fifo_job_queue, GINT_TO_POINTER(result));
+
+    job_info* job = malloc(sizeof(job_info)); /* Store on heap since hash table only stores pointer. */
+    job->status = JOB_READY;
+
+    // copy args
+    args *args_cpy = malloc(sizeof(args));
+    args_cpy->args_len = argp->args.args_len;
+    for (int i = 0; i < args_cpy->args_len; i++) {
+      args_cpy->args_val[i] = strdup(argp->args.args_val[i]);
+    }
+    job->aux = *args_cpy;
+
+    g_hash_table_insert(state->jobs_map, GINT_TO_POINTER(result), job);
+
+  }
 
   /* Do not modify the following code. */
   /* BEGIN */
@@ -119,5 +140,7 @@ void coordinator_init(coordinator** coord_ptr) {
 
   coordinator* coord = *coord_ptr;
 
-  /* TODO */
+  coord->next_job_id = 0;
+  coord->fifo_job_queue = NULL;
+  coord->jobs_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
 }
