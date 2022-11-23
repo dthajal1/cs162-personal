@@ -61,8 +61,9 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   static int result;
 
   printf("Received submit job request\n");
-
-  if (get_app(argp->app)) {
+  
+  app existing_app = get_app(argp->app);
+  if (existing_app.name == NULL) {
     result = -1;
   } else {
     result = state->next_job_id;
@@ -76,9 +77,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
     // copy args
     args *args_cpy = malloc(sizeof(args));
     args_cpy->args_len = argp->args.args_len;
-    for (int i = 0; i < args_cpy->args_len; i++) {
-      args_cpy->args_val[i] = strdup(argp->args.args_val[i]);
-    }
+    args_cpy->args_val = strdup(argp->args.args_val);
     job->aux = *args_cpy;
 
     g_hash_table_insert(state->jobs_map, GINT_TO_POINTER(result), job);

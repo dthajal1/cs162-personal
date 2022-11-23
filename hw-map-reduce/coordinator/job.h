@@ -18,7 +18,7 @@ enum job_status {
 };
 
 typedef struct {
-    u_int args_len;
+    int args_len;
     char *args_val;
 } args;
 
