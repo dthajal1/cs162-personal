@@ -101,7 +101,17 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
 
   printf("Received poll job request\n");
 
-  /* TODO */
+  job_info *existing_job = g_hash_table_lookup(state->jobs_map, GINT_TO_POINTER(*argp));
+  if (existing_job == NULL) {
+    result.invalid_job_id = true;
+  } else {
+    enum job_status status = existing_job->status;
+    if (status == JOB_DONE) {
+      result.done = true;
+    } else if (status == JOB_FAILED) {
+      result.failed = true;
+    }
+  }
 
   return &result;
 }

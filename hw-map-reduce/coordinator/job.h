@@ -13,8 +13,8 @@
 enum job_status {
     JOB_READY,      /* Job ready to be scheduled. */
     JOB_RUNNING,    /* Job is currently running. */
-    JOB_CRASHED,    /* Job crashed. */
-    JOB_FINISHED,   /* Job finished. */
+    JOB_FAILED,    /* Job crashed. */
+    JOB_DONE,   /* Job finished. */
 };
 
 typedef struct {
