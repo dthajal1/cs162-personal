@@ -69,19 +69,11 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
     result = state->next_job_id;
     state->next_job_id++;
 
-    state->fifo_job_queue = g_list_append(state->fifo_job_queue, GINT_TO_POINTER(result));
+    state->job_queue = g_list_append(state->job_queue, GINT_TO_POINTER(result));
 
-    job_info* job = malloc(sizeof(job_info)); /* Store on heap since hash table only stores pointer. */
-    job->status = JOB_READY;
-
-    // copy args
-    args *args_cpy = malloc(sizeof(args));
-    args_cpy->args_len = argp->args.args_len;
-    args_cpy->args_val = strdup(argp->args.args_val);
-    job->aux = *args_cpy;
-
-    g_hash_table_insert(state->jobs_map, GINT_TO_POINTER(result), job);
-
+    job_info *job = accept_job(argp);
+    job->job_id = result;
+    g_hash_table_insert(state->job_map, GINT_TO_POINTER(result), job);
   }
 
   /* Do not modify the following code. */
@@ -101,17 +93,10 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
 
   printf("Received poll job request\n");
 
-  job_info *existing_job = g_hash_table_lookup(state->jobs_map, GINT_TO_POINTER(*argp));
-  if (existing_job == NULL) {
-    result.invalid_job_id = true;
-  } else {
-    enum job_status status = existing_job->status;
-    if (status == JOB_DONE) {
-      result.done = true;
-    } else if (status == JOB_FAILED) {
-      result.failed = true;
-    }
-  }
+  int *job_status = get_job_status(state->job_map, *argp);
+  result.done = job_status[0];
+  result.failed = job_status[1];
+  result.invalid_job_id = job_status[2];
 
   return &result;
 }
@@ -127,7 +112,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   result.wait = true;
   result.args.args_len = 0;
 
-  /* TODO */
+  set_next_task(state->job_queue, state->job_map, &result);
 
   return &result;
 }
@@ -138,7 +123,7 @@ void* finish_task_1_svc(finish_task_request* argp, struct svc_req* rqstp) {
 
   printf("Received finish task request\n");
 
-  /* TODO */
+  complete_task(state->job_map, argp);
 
   return (void*)&result;
 }
@@ -150,6 +135,6 @@ void coordinator_init(coordinator** coord_ptr) {
   coordinator* coord = *coord_ptr;
 
   coord->next_job_id = 0;
-  coord->fifo_job_queue = NULL;
-  coord->jobs_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  coord->job_queue = NULL;
+  coord->job_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
 }
