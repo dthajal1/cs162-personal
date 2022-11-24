@@ -114,7 +114,10 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
         result->n_reduce = next_job->n_reduce;
         result->n_map = next_job->n_map;
         result->output_dir = next_job->output_dir;
-        result->args = next_job->args;
+
+        result->args.args_len = next_job->args.args_len;
+        memcpy(result->args.args_val, next_job->args.args_val, next_job->args.args_len);
+        // result->args = next_job->args;
 
         result->wait = 0;
 
@@ -157,7 +160,6 @@ int num_task_finished(GList* task_queue, GHashTable* task_map) {
 }
 
 void complete_task(GHashTable* job_map, finish_task_request* task_req) {
-
     job_info *existing_job = g_hash_table_lookup(job_map, GINT_TO_POINTER(task_req->job_id));
     if (existing_job) {
         // update task status

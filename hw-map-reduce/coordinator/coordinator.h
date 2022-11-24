@@ -24,8 +24,8 @@
 
 typedef struct {
   int next_job_id;          /* next unique jobID. Starts at 0 and counts up. */   
-  GList* job_queue;  /* FIFO job queue. Each element is a jobId */
-  GHashTable* job_map;       /* Map for job and its jobID */
+  GList* job_queue;         /* FIFO job queue. Each element is a jobId */
+  GHashTable* job_map;      /* Map for job and its jobID */
 } coordinator;
 
 void coordinator_init(coordinator** coord_ptr);
