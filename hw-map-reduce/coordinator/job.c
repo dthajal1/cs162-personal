@@ -119,7 +119,6 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
 
         result->args.args_len = next_job->args.args_len;
         memcpy(result->args.args_val, next_job->args.args_val, next_job->args.args_len);
-        // result->args = next_job->args;
 
         result->wait = 0;
 
@@ -139,10 +138,11 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                 result->reduce = 1;
             } else {
                 // should never end up here?
-                next_mtask->status = TASK_DONE;
-                next_rtask->status = TASK_DONE;
-                next_job->status = JOB_DONE;
-                printf("This statement shouldn't be reached if implemented correctly.\n");
+                result->wait = 1;
+                // next_mtask->status = TASK_DONE;
+                // next_rtask->status = TASK_DONE;
+                // next_job->status = JOB_DONE;
+                // printf("This statement shouldn't be reached if implemented correctly.\n");
             }
         }
     } else {
