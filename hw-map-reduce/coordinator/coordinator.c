@@ -61,7 +61,7 @@ int* submit_job_1_svc(submit_job_request* argp, struct svc_req* rqstp) {
   static int result;
 
   printf("Received submit job request\n");
-  
+
   app existing_app = get_app(argp->app);
   if (existing_app.name == NULL) {
     result = -1;
