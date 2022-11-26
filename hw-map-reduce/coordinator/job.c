@@ -54,10 +54,12 @@ job_info* accept_job(submit_job_request* job_request) {
     // copy args
     args *args_cpy = malloc(sizeof(args));
     args_cpy->args_len = job_request->args.args_len;
-    args_cpy->args_val = strdup(job_request->args.args_val);
+    args_cpy->args_val = malloc(sizeof(char) * args_cpy->args_len);
+    memcpy(args_cpy->args_val, job_request->args.args_val, job_request->args.args_len);
     new_job->args = *args_cpy;
 
     // new_job->status = JOB_READY;
+    return new_job;
 }
 
 int *get_job_status(GHashTable* job_map, int job_id) {
@@ -137,6 +139,9 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                 result->reduce = 1;
             } else {
                 // should never end up here?
+                next_mtask->status = TASK_DONE;
+                next_rtask->status = TASK_DONE;
+                next_job->status = JOB_DONE;
                 printf("This statement shouldn't be reached if implemented correctly.\n");
             }
         }
