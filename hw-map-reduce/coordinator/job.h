@@ -12,12 +12,14 @@
 
 enum job_status {
     // JOB_ALL_MAP_TASKS_ASSIGNED,
-    JOB_MAP_DONE,    /* Job is done running map tasks. */
+    JOB_READY,
+    // JOB_MAP_DONE,    /* Job is done running map tasks. */
     JOB_FAILED,      /* Job crashed. */
     JOB_DONE,        /* Job finished. */
 };
 
 enum task_status {
+    TASK_READY,
     TASK_ASSIGNED,  /* Task assigned and is running. */
     TASK_FAILED,    /* Task crashed. */
     TASK_DONE,      /* Task finished. */
