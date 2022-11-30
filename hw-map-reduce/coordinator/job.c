@@ -139,7 +139,6 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
         } else {
             // no more map task left to be scheduled
             // reduce tasks can now be scheduled
-            // next_job->status = JOB_ALL_MAP_TASKS_ASSIGNED;
             task_info *next_rtask = get_highest_prio_task(next_job->rtask_queue, next_job->rtask_map);
             if (next_rtask != NULL) {
                 result->task = next_rtask->task_id;
