@@ -5,6 +5,7 @@
  */
 #include "../rpc/rpc.h"
 #include <glib.h>
+#include <stdbool.h> 
 
 #ifndef JOB_H__
 #define JOB_H__
@@ -17,7 +18,7 @@ enum job_status {
 };
 
 enum task_status {
-    // TASK_ASSIGNED,  /* Task assigned and is running. */
+    TASK_ASSIGNED,  /* Task assigned and is running. */
     TASK_FAILED,    /* Task crashed. */
     TASK_DONE,      /* Task finished. */
 };

@@ -113,6 +113,7 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
   result.args.args_len = 0;
 
   set_next_task(state->job_queue, state->job_map, &result);
+  printf("Next task to assign is: %d\n", result.task);
 
   return &result;
 }

@@ -11,14 +11,11 @@ task_info* accept_task(int task_id, path *input_files, int is_reduce) {
     task_info* new_task = malloc(sizeof(task_info));
 
     new_task->task_id = task_id;
+    new_task->is_reduce = is_reduce;
 
-    if (is_reduce) {
-        new_task->is_reduce = 1;
-    } else {
-        new_task->file = strdup(input_files[task_id]); // input_files is not null terminated. Might cause error?
-        new_task->is_reduce = 0;
-    }
-
+    if (is_reduce == 0) {
+        new_task->file = strdup(input_files[task_id]);
+    } 
     // new_task->status = TASK_READY;
     return new_task;
 }
@@ -104,7 +101,7 @@ task_info* get_highest_prio_task(GList* task_queue, GHashTable* task_map) {
     for (GList* elem = task_queue; elem; elem = elem->next) {
         int task_id = GPOINTER_TO_INT(elem->data); /* Cast data back to an integer. */
         task_info *existing_task = g_hash_table_lookup(task_map, GINT_TO_POINTER(task_id));
-        if (existing_task && (existing_task->status != TASK_DONE)) {
+        if (existing_task && (existing_task->status != TASK_DONE && existing_task->status != TASK_ASSIGNED)) {
             // TODO: what if task has failed? should it be reassignable?
             return existing_task;
         }
@@ -126,7 +123,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
         result->args.args_len = next_job->args.args_len;
         result->args.args_val = malloc(sizeof(char) * result->args.args_len);
         memcpy(result->args.args_val, next_job->args.args_val, next_job->args.args_len);
-        result->wait = 0;
+        result->wait = false;
 
         /* from the highest priority job, find highest priority map task */
         task_info *next_mtask = get_highest_prio_task(next_job->mtask_queue, next_job->mtask_map);
@@ -135,7 +132,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
             result->task = next_mtask->task_id;
             result->reduce = 0;
 
-            // next_mtask->status = TASK_ASSIGNED;
+            next_mtask->status = TASK_ASSIGNED;
         } else {
             // no more map task left to be scheduled
             // reduce tasks can now be scheduled
@@ -144,10 +141,10 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                 result->task = next_rtask->task_id;
                 result->reduce = 1;
 
-                // next_rtask->status = TASK_ASSIGNED;
+                next_rtask->status = TASK_ASSIGNED;
             } else {
                 // should never end up here?
-                result->wait = 1;
+                result->wait = true;
                 // next_mtask->status = TASK_DONE;
                 // next_rtask->status = TASK_DONE;
                 // next_job->status = JOB_DONE;
@@ -156,7 +153,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
         }
     } else {
         // no more job left to be scheduled
-        result->wait = 1;
+        result->wait = true;
     }
 }
 
