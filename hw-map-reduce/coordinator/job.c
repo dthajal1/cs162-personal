@@ -86,8 +86,9 @@ job_info* get_highest_prio_job(GList* job_queue, GHashTable* job_map) {
     for (GList* elem = job_queue; elem; elem = elem->next) {
         int job_id = GPOINTER_TO_INT(elem->data); /* Cast data back to an integer. */
         job_info *existing_job = g_hash_table_lookup(job_map, GINT_TO_POINTER(job_id));
-        if ((existing_job->status == JOB_READY || existing_job->status == JOB_IN_PROGRESS) &&
-            existing_job->status != JOB_ALL_MAP_TASKS_ASSIGNED) {
+        if (existing_job->status == JOB_READY || 
+            (existing_job->status == JOB_IN_PROGRESS &&
+             existing_job->status != JOB_ALL_MAP_TASKS_ASSIGNED)) {
             return existing_job;
         }
         // // if failed => mark the corresponding job as failed and stop assigning tasks for that job
@@ -147,7 +148,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
         memcpy(result->args.args_val, next_job->args.args_val, next_job->args.args_len);
         result->wait = false;
 
-        /* from the highest priority job, find highest priority map task */
+        /* from the highest priority job, find highest priority ready map task */
         task_info *next_mtask = get_highest_prio_task(next_job->mtask_queue, next_job->mtask_map);
         if (next_mtask != NULL) {
             // printf("next map task to be assigned: %d\n", next_mtask->task_id);
@@ -164,7 +165,6 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
             int num_mtask_finished = num_task_finished(next_job->mtask_queue, next_job->mtask_map);
             if (num_mtask_finished == mtotal) {
                 // next_job->status = JOB_MAP_DONE;
-
                 // reduce tasks can now be scheduled
                 task_info *next_rtask = get_highest_prio_task(next_job->rtask_queue, next_job->rtask_map);
                 if (next_rtask != NULL) {
