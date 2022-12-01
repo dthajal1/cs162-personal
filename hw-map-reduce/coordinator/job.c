@@ -131,20 +131,13 @@ task_info* get_highest_prio_task(GList* task_queue, GHashTable* task_map) {
             suseconds_t ms_since_assigned = micros_elapsed(existing_task->assigned_time);
             // time_t secs_since_assigned = time(NULL) - existing_task->assigned_time;
             // printf("Seconds since start of program = %ld\n", secs_since_assigned);
-            if (ms_since_assigned > TASK_TIMEOUT_SECS) {
-                // printf("Reassigning this task to another worker\n");
+            if (ms_since_assigned > (TASK_TIMEOUT_SECS * 1000)) {
                 return existing_task;
             }
         }
         if (existing_task->status == TASK_READY) {
             return existing_task;
         }
-        // if (existing_task->status != TASK_DONE && 
-        //     existing_task->status != TASK_IN_PROGRESS && 
-        //     existing_task->status != TASK_FAILED) {
-        //     // TODO: what if task has failed? should it be reassignable?
-        //     return existing_task;
-        // }
     }
     return NULL;
 }
