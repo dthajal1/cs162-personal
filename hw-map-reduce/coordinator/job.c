@@ -114,13 +114,6 @@ job_info* get_highest_prio_job(GList* job_queue, GHashTable* job_map) {
     return NULL;
 }
 
-/* Helper functions to support milliseconds precison. */
-suseconds_t micros_elapsed(struct timeval time) {
-  struct timeval current_time;
-  gettimeofday(&current_time, NULL);
-  return (current_time.tv_sec - time.tv_sec) * 1000000 + current_time.tv_usec - time.tv_usec;
-}
-
 /* Get highest priority task that is yet to be processed. */
 task_info* get_highest_prio_task(GList* task_queue, GHashTable* task_map) {
     for (GList* elem = task_queue; elem; elem = elem->next) {
@@ -128,16 +121,22 @@ task_info* get_highest_prio_task(GList* task_queue, GHashTable* task_map) {
         task_info *existing_task = g_hash_table_lookup(task_map, GINT_TO_POINTER(task_id));
         if (existing_task->status == TASK_IN_PROGRESS) {
             // handle worker failures by immediately assiging the task to another worker
-            suseconds_t ms_since_assigned = micros_elapsed(existing_task->assigned_time);
-            // time_t secs_since_assigned = time(NULL) - existing_task->assigned_time;
+            time_t secs_since_assigned = time(NULL) - existing_task->assigned_time;
             // printf("Seconds since start of program = %ld\n", secs_since_assigned);
-            if (ms_since_assigned > (TASK_TIMEOUT_SECS * 1000)) {
+            if (secs_since_assigned > TASK_TIMEOUT_SECS) {
+                // printf("Reassigning this task to another worker\n");
                 return existing_task;
             }
         }
         if (existing_task->status == TASK_READY) {
             return existing_task;
         }
+        // if (existing_task->status != TASK_DONE && 
+        //     existing_task->status != TASK_IN_PROGRESS && 
+        //     existing_task->status != TASK_FAILED) {
+        //     // TODO: what if task has failed? should it be reassignable?
+        //     return existing_task;
+        // }
     }
     return NULL;
 }
@@ -179,7 +178,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
             result->task = next_mtask->task_id;
             result->reduce = 0;
 
-            gettimeofday(&next_mtask->assigned_time, NULL);
+            next_mtask->assigned_time = time(NULL);
             // printf("Map Assigned time = %ld\n", next_mtask->assigned_time);
             next_mtask->status = TASK_IN_PROGRESS;
             next_job->status = JOB_IN_PROGRESS;
@@ -198,7 +197,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                     result->task = next_rtask->task_id;
                     result->reduce = 1;
 
-                    gettimeofday(&next_rtask->assigned_time, NULL);
+                    next_rtask->assigned_time = time(NULL);
                     // printf("Reduce Assigned time = %ld\n", next_rtask->assigned_time);
                     next_rtask->status = TASK_IN_PROGRESS;
                     next_job->status = JOB_IN_PROGRESS;
