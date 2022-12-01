@@ -86,9 +86,8 @@ job_info* get_highest_prio_job(GList* job_queue, GHashTable* job_map) {
     for (GList* elem = job_queue; elem; elem = elem->next) {
         int job_id = GPOINTER_TO_INT(elem->data); /* Cast data back to an integer. */
         job_info *existing_job = g_hash_table_lookup(job_map, GINT_TO_POINTER(job_id));
-        if (existing_job->status == JOB_READY || 
-            (existing_job->status == JOB_IN_PROGRESS &&
-             existing_job->status != JOB_ALL_MAP_TASKS_ASSIGNED)) {
+        if (existing_job->status == JOB_READY || existing_job->status == JOB_IN_PROGRESS ||
+            existing_job->status == JOB_MAP_DONE) {
             return existing_job;
         }
         // // if failed => mark the corresponding job as failed and stop assigning tasks for that job
@@ -164,7 +163,8 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
             int mtotal = g_list_length(next_job->mtask_queue);
             int num_mtask_finished = num_task_finished(next_job->mtask_queue, next_job->mtask_map);
             if (num_mtask_finished == mtotal) {
-                // next_job->status = JOB_MAP_DONE;
+                next_job->status = JOB_MAP_DONE;
+
                 // reduce tasks can now be scheduled
                 task_info *next_rtask = get_highest_prio_task(next_job->rtask_queue, next_job->rtask_map);
                 if (next_rtask != NULL) {
@@ -177,10 +177,12 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                 } else {
                     // all reduce tasks are now assigned
                     // printf("all reduce tasks are now assigned\n");
-                    result->wait = true;
+                    next_job->status = JOB_ALL_REDUCE_TASKS_ASSIGNED;
+                    set_next_task(job_queue, job_map, result);
                 }
             } else {
-                // wait until all map tasks have finished
+                // have to wait until all map tasks have finished
+                // in the meantime can assign map tasks for another job
                 next_job->status = JOB_ALL_MAP_TASKS_ASSIGNED;
                 set_next_task(job_queue, job_map, result);
                 // result->wait = true;
@@ -221,11 +223,11 @@ void complete_task(GHashTable* job_map, finish_task_request* task_req) {
     }
 
     // update job status
-    // int mtotal = g_list_length(existing_job->mtask_queue);
-    // int num_mtask_finished = num_task_finished(existing_job->mtask_queue, existing_job->mtask_map);
-    // if (num_mtask_finished == mtotal) {
-    //     existing_job->status = JOB_MAP_DONE;
-    // }
+    int mtotal = g_list_length(existing_job->mtask_queue);
+    int num_mtask_finished = num_task_finished(existing_job->mtask_queue, existing_job->mtask_map);
+    if (num_mtask_finished == mtotal) {
+        existing_job->status = JOB_MAP_DONE;
+    }
 
     int rtotal = g_list_length(existing_job->rtask_queue);
     int num_rtask_finished = num_task_finished(existing_job->rtask_queue, existing_job->rtask_map);

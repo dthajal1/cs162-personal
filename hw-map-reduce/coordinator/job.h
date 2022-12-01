@@ -15,6 +15,7 @@ enum job_status {
     JOB_IN_PROGRESS,
     JOB_ALL_MAP_TASKS_ASSIGNED,
     JOB_MAP_DONE,    /* Job is done running map tasks. */
+    JOB_ALL_REDUCE_TASKS_ASSIGNED,
     JOB_FAILED,      /* Job crashed. */
     JOB_DONE,        /* Job finished. */
 };
