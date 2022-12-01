@@ -114,6 +114,13 @@ task_info* get_highest_prio_task(GList* task_queue, GHashTable* task_map) {
     for (GList* elem = task_queue; elem; elem = elem->next) {
         int task_id = GPOINTER_TO_INT(elem->data); /* Cast data back to an integer. */
         task_info *existing_task = g_hash_table_lookup(task_map, GINT_TO_POINTER(task_id));
+        if (existing_task->status == TASK_IN_PROGRESS) {
+            // handle worker failures by immediately assiging the task to another worker
+            time_t secs_since_assigned = time(NULL) - existing_task->assigned_time;
+            if (secs_since_assigned > TASK_TIMEOUT_SECS) {
+                return existing_task;
+            }
+        }
         if (existing_task->status == TASK_READY) {
             return existing_task;
         }
@@ -164,6 +171,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
             result->task = next_mtask->task_id;
             result->reduce = 0;
 
+            next_mtask->assigned_time = time(NULL);
             next_mtask->status = TASK_IN_PROGRESS;
             next_job->status = JOB_IN_PROGRESS;
         } else {
@@ -181,6 +189,7 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                     result->task = next_rtask->task_id;
                     result->reduce = 1;
 
+                    next_rtask->assigned_time = time(NULL);
                     next_rtask->status = TASK_IN_PROGRESS;
                     next_job->status = JOB_IN_PROGRESS;
                 } else {
