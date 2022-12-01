@@ -7,6 +7,8 @@
 #include "../lib/lib.h"
 #include <glib.h>
 #include <stdbool.h> 
+#include <time.h>
+
 
 #ifndef JOB_H__
 #define JOB_H__

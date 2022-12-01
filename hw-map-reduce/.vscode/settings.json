@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "coordinator.h": "c"
+        "coordinator.h": "c",
+        "rpc.h": "c",
+        "lib.h": "c",
+        "time.h": "c"
     }
 }
