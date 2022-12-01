@@ -86,7 +86,8 @@ job_info* get_highest_prio_job(GList* job_queue, GHashTable* job_map) {
     for (GList* elem = job_queue; elem; elem = elem->next) {
         int job_id = GPOINTER_TO_INT(elem->data); /* Cast data back to an integer. */
         job_info *existing_job = g_hash_table_lookup(job_map, GINT_TO_POINTER(job_id));
-        if (existing_job && existing_job->status == JOB_READY) {
+        if ((existing_job->status == JOB_READY || existing_job->status == JOB_IN_PROGRESS) &&
+            existing_job->status != JOB_ALL_MAP_TASKS_ASSIGNED) {
             return existing_job;
         }
         // // if failed => mark the corresponding job as failed and stop assigning tasks for that job
@@ -108,7 +109,7 @@ task_info* get_highest_prio_task(GList* task_queue, GHashTable* task_map) {
             return existing_task;
         }
         // if (existing_task->status != TASK_DONE && 
-        //     existing_task->status != TASK_ASSIGNED && 
+        //     existing_task->status != TASK_IN_PROGRESS && 
         //     existing_task->status != TASK_FAILED) {
         //     // TODO: what if task has failed? should it be reassignable?
         //     return existing_task;
@@ -123,7 +124,7 @@ int num_task_finished(GList* task_queue, GHashTable* task_map) {
     for (GList* elem = task_queue; elem; elem = elem->next) {
         int task_id = GPOINTER_TO_INT(elem->data); /* Cast data back to an integer. */
         task_info *existing_task = g_hash_table_lookup(task_map, GINT_TO_POINTER(task_id));
-        if (existing_task && existing_task->status == TASK_DONE) {
+        if (existing_task->status == TASK_DONE) {
             counter++;
         }
     }
@@ -154,7 +155,8 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
             result->task = next_mtask->task_id;
             result->reduce = 0;
 
-            next_mtask->status = TASK_ASSIGNED;
+            next_mtask->status = TASK_IN_PROGRESS;
+            next_job->status = JOB_IN_PROGRESS;
         } else {
             // no more map task left to be scheduled
             // check if all map tasks are finished
@@ -170,7 +172,8 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                     result->task = next_rtask->task_id;
                     result->reduce = 1;
 
-                    next_rtask->status = TASK_ASSIGNED;
+                    next_rtask->status = TASK_IN_PROGRESS;
+                    next_job->status = JOB_IN_PROGRESS;
                 } else {
                     // all reduce tasks are now assigned
                     // printf("all reduce tasks are now assigned\n");
@@ -178,7 +181,9 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                 }
             } else {
                 // wait until all map tasks have finished
-                result->wait = true;
+                next_job->status = JOB_ALL_MAP_TASKS_ASSIGNED;
+                set_next_task(job_queue, job_map, result);
+                // result->wait = true;
             }
         }
     } else {
