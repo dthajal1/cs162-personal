@@ -67,14 +67,23 @@ int *get_job_status(GHashTable* job_map, int job_id) {
 
     job_info *existing_job = g_hash_table_lookup(job_map, GINT_TO_POINTER(job_id));
     if (existing_job == NULL) {
+        result[0] = 0;
+        result[1] = 0;
         result[2] = 1;
     } else {
         enum job_status status = existing_job->status;
         if (status == JOB_DONE) {
             result[0] = 1;
+            result[1] = 0;
+            result[2] = 0;
         } else if (status == JOB_FAILED) {
             result[0] = 1;
             result[1] = 1;
+            result[2] = 0;
+        } else {
+            result[0] = 0;
+            result[1] = 0;
+            result[2] = 0;
         }
     }
 
@@ -176,16 +185,16 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                     next_job->status = JOB_IN_PROGRESS;
                 } else {
                     // all reduce tasks are now assigned
-                    // printf("all reduce tasks are now assigned\n");
+                    // have to wait until all reduce tasks are finished
+                    // in the meantime, can assign tasks for another job
                     next_job->status = JOB_ALL_REDUCE_TASKS_ASSIGNED;
                     set_next_task(job_queue, job_map, result);
                 }
             } else {
                 // have to wait until all map tasks have finished
-                // in the meantime can assign map tasks for another job
+                // in the meantime can assign tasks for another job
                 next_job->status = JOB_ALL_MAP_TASKS_ASSIGNED;
                 set_next_task(job_queue, job_map, result);
-                // result->wait = true;
             }
         }
     } else {
