@@ -28,12 +28,12 @@ enum task_status {
     TASK_DONE,      /* Task finished. */
 };
 
-typedef char *path;
+// typedef char *path;
 
-struct {
-    int files_len;
-    path *files_val;
-} files;
+// struct {
+//     int files_len;
+//     path *files_val;
+// } files;
 
 typedef struct {
     int args_len;
@@ -46,7 +46,7 @@ typedef struct {
     int task_id;                 /* Map/Reduce task number. */
     path file;                   /* Input file to this task. NULL if is_reduce. */
     int is_reduce;               /* 1 if this task is reduce. 0 otherwise. */
-    time_t assigned_time;        /* Time this task was assigned. */
+    struct timeval assigned_time;        /* Time this task was assigned. */
 } task_info;
 
 typedef struct {

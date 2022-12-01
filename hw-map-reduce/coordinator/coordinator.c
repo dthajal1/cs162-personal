@@ -92,12 +92,12 @@ poll_job_reply* poll_job_1_svc(int* argp, struct svc_req* rqstp) {
   static poll_job_reply result;
 
   printf("Received poll job request\n");
-
+  // printf("#################################################\n");
   int *job_status = get_job_status(state->job_map, *argp);
   result.done = job_status[0];
   result.failed = job_status[1];
   result.invalid_job_id = job_status[2];
-
+  // printf("#################################################\n");
   return &result;
 }
 
