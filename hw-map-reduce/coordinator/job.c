@@ -104,12 +104,6 @@ job_info* get_highest_prio_job(GList* job_queue, GHashTable* job_map) {
             existing_job->status == JOB_MAP_DONE) {
             return existing_job;
         }
-        // // if failed => mark the corresponding job as failed and stop assigning tasks for that job
-        // if (existing_job->status != JOB_FAILED &&
-        //     existing_job->status != JOB_DONE) {
-        //                         // how do i know whether all the map tasks are fully assigned?
-        //     return existing_job;
-        // }
     }
     return NULL;
 }
@@ -131,12 +125,6 @@ task_info* get_highest_prio_task(GList* task_queue, GHashTable* task_map) {
         if (existing_task->status == TASK_READY) {
             return existing_task;
         }
-        // if (existing_task->status != TASK_DONE && 
-        //     existing_task->status != TASK_IN_PROGRESS && 
-        //     existing_task->status != TASK_FAILED) {
-        //     // TODO: what if task has failed? should it be reassignable?
-        //     return existing_task;
-        // }
     }
     return NULL;
 }
@@ -156,6 +144,12 @@ int num_task_finished(GList* task_queue, GHashTable* task_map) {
 
 /* Sets the next task to be assigned to result. */
 void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result) {
+    result->file = "";
+    result->output_dir = "";
+    result->app = "";
+    result->wait = true;
+    result->args.args_len = 0;
+
     /* find highest priority job that is ready to be processed. */
     job_info *next_job = get_highest_prio_job(job_queue, job_map);    
     if (next_job != NULL) {
@@ -185,9 +179,8 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
         } else {
             // no more map task left to be scheduled
             // check if all map tasks are finished
-            int mtotal = g_list_length(next_job->mtask_queue);
             int num_mtask_finished = num_task_finished(next_job->mtask_queue, next_job->mtask_map);
-            if (num_mtask_finished == mtotal) {
+            if (num_mtask_finished == next_job->n_map) {
                 next_job->status = JOB_MAP_DONE;
 
                 // reduce tasks can now be scheduled
@@ -205,18 +198,21 @@ void set_next_task(GList* job_queue, GHashTable* job_map, get_task_reply* result
                     // all reduce tasks are now assigned
                     // have to wait until all reduce tasks are finished
                     // in the meantime, can assign tasks for another job
+                    // printf("All reduce tasks are now assigned! In the meantime can assign map tasks for another job.\n");
                     next_job->status = JOB_ALL_REDUCE_TASKS_ASSIGNED;
                     set_next_task(job_queue, job_map, result);
                 }
             } else {
                 // have to wait until all map tasks have finished
                 // in the meantime can assign tasks for another job
+                // printf("All map tasks are now assigned! In the meantime assign map tasks for another job.\n");
                 next_job->status = JOB_ALL_MAP_TASKS_ASSIGNED;
                 set_next_task(job_queue, job_map, result);
             }
         }
     } else {
         // no more job left to be scheduled
+        // printf("No more job left to be scheduled!\n");
         result->wait = true;
     }
 }
@@ -226,6 +222,7 @@ void complete_task(GHashTable* job_map, finish_task_request* task_req) {
     // printf("*******************************************************\n");
     job_info *existing_job = g_hash_table_lookup(job_map, GINT_TO_POINTER(task_req->job_id));
     if (existing_job) {
+        // printf("completing job...\n");
         // update task status
         task_info *existing_task = NULL;
         if (task_req->reduce) {
@@ -247,18 +244,19 @@ void complete_task(GHashTable* job_map, finish_task_request* task_req) {
                 return;
             }
         }
+    } else {
+        // printf("unable to complete job because job id invalid...\n");
+        return;
     }
 
     // update job status
-    int mtotal = g_list_length(existing_job->mtask_queue);
     int num_mtask_finished = num_task_finished(existing_job->mtask_queue, existing_job->mtask_map);
-    if (num_mtask_finished == mtotal) {
+    if (num_mtask_finished == existing_job->n_map) {
         existing_job->status = JOB_MAP_DONE;
     }
 
-    int rtotal = g_list_length(existing_job->rtask_queue);
     int num_rtask_finished = num_task_finished(existing_job->rtask_queue, existing_job->rtask_map);
-    if (num_rtask_finished == rtotal) {
+    if (num_rtask_finished == existing_job->n_reduce) {
         existing_job->status = JOB_DONE;
     }
     // printf("*******************************************************\n");

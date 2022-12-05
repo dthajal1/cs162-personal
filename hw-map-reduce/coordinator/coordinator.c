@@ -107,11 +107,11 @@ get_task_reply* get_task_1_svc(void* argp, struct svc_req* rqstp) {
 
   printf("Received get task request\n");
   // printf("#################################################\n");
-  result.file = "";
-  result.output_dir = "";
-  result.app = "";
-  result.wait = true;
-  result.args.args_len = 0;
+  // result.file = "";
+  // result.output_dir = "";
+  // result.app = "";
+  // result.wait = true;
+  // result.args.args_len = 0;
 
   set_next_task(state->job_queue, state->job_map, &result);
   // printf("#################################################\n");
