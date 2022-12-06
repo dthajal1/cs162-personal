@@ -15,9 +15,10 @@
 
 enum job_status {
     JOB_READY,
-    JOB_IN_PROGRESS,
+    JOB_MAP_IP,
     JOB_ALL_MAP_TASKS_ASSIGNED,
     JOB_MAP_DONE,    /* Job is done running map tasks. */
+    JOB_REDUCE_IP,
     JOB_ALL_REDUCE_TASKS_ASSIGNED,
     JOB_FAILED,      /* Job crashed. */
     JOB_DONE,        /* Job finished. */
@@ -26,6 +27,7 @@ enum job_status {
 enum task_status {
     TASK_READY,
     TASK_IN_PROGRESS,  /* Task assigned and is running. */
+    // TASK_SHOULD_REASSIGN,
     TASK_FAILED,    /* Task crashed. */
     TASK_DONE,      /* Task finished. */
 };
