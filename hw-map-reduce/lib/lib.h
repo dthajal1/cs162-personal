@@ -30,7 +30,8 @@ typedef struct {
  * Coordinator constants and utilities.
  */
 
-#define TASK_TIMEOUT_SECS 10 /* Timeout before task is re-assigned. */
+// #define TASK_TIMEOUT_SECS 10 /* Timeout before task is re-assigned. */
+#define TASK_TIMEOUT_SECS 5 /* Timeout before task is re-assigned. */
 
 /**
  * Worker constants and utilities.
