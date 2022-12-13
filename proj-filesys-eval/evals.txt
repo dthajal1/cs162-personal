@@ -1,1 +1,4 @@
 Name|Autograder ID (XXX)|Score|Comment
+Charlie Shou|97|20|He fully designed the buffer cache and helped ashley to design extensible files. For the implementation part of the project, he worked with ashely on extensible files and spend a lot of time debugging persistence test.
+Kristie Huang|115|20|She worked with me to design and implement subdirectiories portion of the project. I did most of designing and implementation and she did most of debugging a lot of the tests.
+Ashley Ye|51|20|She designed and implemented most of extensible files. She also helped to debug multiple tests.
